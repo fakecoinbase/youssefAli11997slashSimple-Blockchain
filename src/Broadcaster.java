@@ -1,67 +1,51 @@
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
-public class Broadcaster extends Thread {
-    // initialize socket and input output streams
-    private Socket socket = null;
-    private Scanner input = null;
-    private DataOutputStream out = null;
+public class Broadcaster {
+    private List<Socket> sockets = new ArrayList<>();
+    private Scanner input = new Scanner(System.in);
+    private List<DataOutputStream> outputStreams = new ArrayList<>();
 
     private NetworkInfo.NodeInfo myInfo;
 
     Broadcaster(NetworkInfo.NodeInfo info) {
         myInfo = info;
-        start();
     }
 
-    @Override
-    public void run() {
+    public void connectWithPeers() {
         for(NetworkInfo.NodeInfo nodeInfo : NetworkInfo.NODE_INFOS) {
+
+            // skip my own node
             if(myInfo.ipAddress.equals(nodeInfo.ipAddress) && myInfo.port == nodeInfo.port)
                 continue;
+
             // establish a connection
             try {
-                socket = new Socket(nodeInfo.ipAddress, nodeInfo.port);
+                Socket socket = new Socket(nodeInfo.ipAddress, nodeInfo.port);
                 System.out.println("Connected");
 
-                // takes input from terminal
-                input = new Scanner(System.in);
+                DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 
-                // sends output to the socket
-                out = new DataOutputStream(socket.getOutputStream());
+                sockets.add(socket);
+                outputStreams.add(out);
             }
             catch(IOException u) {
                 u.printStackTrace();
             }
-
-
-            try {
-                out.writeUTF("Hello from the other side");
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            // close the connection
-            try {
-                input.close();
-                if (out != null) {
-                    out.close();
-                }
-                if (socket != null) {
-                    socket.close();
-                }
-            }
-            catch(IOException i) {
-                System.out.println(i);
-            }
         }
     }
 
-    public static void main(String[] args) {
-        System.out.println("I am broadcaster");
-        Broadcaster broadcaster = new Broadcaster(new NetworkInfo.NodeInfo("", 0));
+    public void broadcast(String msg) {
+        for(DataOutputStream outputStream : outputStreams) {
+            try {
+                outputStream.writeUTF(msg);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

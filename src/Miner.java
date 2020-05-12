@@ -11,7 +11,7 @@ public class Miner {
 
     public static void beginListening() throws IOException {
         // server is listening
-        ServerSocket ss = new ServerSocket(5001);
+        ServerSocket ss = new ServerSocket(5000);
 
         // running infinite loop for getting
         // client request
