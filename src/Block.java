@@ -8,11 +8,13 @@ public class Block implements Serializable {
     private String prevBlockHash;
     private String merkleRootHash;
     private final long timestamp = new Date().getTime();
+    private int nonce;
     private List<Transaction> transactions = new ArrayList<>();
 
     public Block(String prevBlockHash, String merkleRootHash, List<Transaction> transactions) {
         this.prevBlockHash = prevBlockHash;
         this.merkleRootHash = merkleRootHash;
         this.transactions = transactions;
+        this.nonce = 0;
     }
 }
