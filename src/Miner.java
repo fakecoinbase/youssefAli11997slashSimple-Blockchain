@@ -3,8 +3,13 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Miner {
+
+    private static List<Transaction> pendingTransactions = new ArrayList<>();
+
     public static void main(String[] args) throws IOException {
         beginListening();
     }
@@ -30,10 +35,7 @@ public class Miner {
 
                 System.out.println("Assigning new thread for this peer");
 
-                // create a new thread object
                 Thread t = new Listener(socket, dis, dos);
-
-                // Invoking the start() method
                 t.start();
 
             }
@@ -42,5 +44,10 @@ public class Miner {
                 e.printStackTrace();
             }
         }
+    }
+
+    public static synchronized void receivedNewTransaction(Transaction transaction) {
+        // TODO: verify transaction before adding to pending transactions
+        pendingTransactions.add(transaction);
     }
 }

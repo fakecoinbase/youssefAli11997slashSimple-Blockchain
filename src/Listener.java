@@ -1,13 +1,15 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.net.Socket;
 
 public class Listener extends Thread {
-    //initialize socket and input stream
     private Socket socket = null;
     private DataInputStream dis =  null;
     private DataOutputStream dos = null;
+
+    private final Object LOCK = new Object();
 
     public Listener(Socket socket, DataInputStream in, DataOutputStream out) {
         this.socket = socket;
@@ -15,18 +17,31 @@ public class Listener extends Thread {
         this.dos = out;
     }
 
+    public void receive() {
+        ObjectInputStream in = null;
+        try {
+            in = new ObjectInputStream(dis);
+            Object object = in.readObject();
+
+            if(object instanceof Transaction) {
+                Transaction transaction = (Transaction) object;
+                Miner.receivedNewTransaction(transaction);
+
+                System.out.println(transaction.toString());
+            }
+            // TODO: check if it's a block
+        }
+        catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public void run() {
         String received;
 
         //while(true) {
-            try {
-                received = dis.readUTF();
-                System.out.println(received);
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
+            receive();
         //}
     }
 }

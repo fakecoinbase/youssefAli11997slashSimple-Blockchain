@@ -1,5 +1,6 @@
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +44,17 @@ public class Broadcaster {
         for(DataOutputStream outputStream : outputStreams) {
             try {
                 outputStream.writeUTF(msg);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void broadcast(Transaction transaction) {
+        for(DataOutputStream outputStream : outputStreams) {
+            try {
+                ObjectOutputStream os = new ObjectOutputStream(outputStream);
+                os.writeObject(transaction);
             } catch (IOException e) {
                 e.printStackTrace();
             }
