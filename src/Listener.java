@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class Listener extends Thread {
-    int port;
     //initialize socket and input stream
     private Socket socket = null;
     private DataInputStream dis =  null;
