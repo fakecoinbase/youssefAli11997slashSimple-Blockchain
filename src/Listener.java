@@ -29,7 +29,10 @@ public class Listener extends Thread {
 
                 System.out.println(transaction.toString());
             }
-            // TODO: check if it's a block
+            else if(object instanceof Block) {
+                Block block = (Block) object;
+                Miner.receivedNewBlock(block);
+            }
         }
         catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();

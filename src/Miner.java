@@ -9,6 +9,7 @@ import java.util.List;
 public class Miner {
 
     private static List<Transaction> pendingTransactions = new ArrayList<>();
+    private static List<Block> blockchain = new ArrayList<>();
 
     public static void main(String[] args) throws IOException {
         beginListening();
@@ -49,5 +50,11 @@ public class Miner {
     public static synchronized void receivedNewTransaction(Transaction transaction) {
         // TODO: verify transaction before adding to pending transactions
         pendingTransactions.add(transaction);
+    }
+
+    public static synchronized void receivedNewBlock(Block block) {
+        // TODO: verify block before adding to blockchains
+        // TODO: handle forks
+        blockchain.add(block);
     }
 }
