@@ -3,7 +3,11 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 
 public class Miner {
 
@@ -12,20 +16,34 @@ public class Miner {
     public static List<Block> blockchain;
     public static HashSet<String> uTxoPool;
     public static final int BLOCK_SIZE = 200;
+    public static final int BLOCK_REWARD = 5;
+    public static final int DIFF = 3;
     public static int WORKING_MODE = 0; //0 For POW | 1 For BFT
-
+    public static boolean miningBlock = false;
+    public static Account account;
+    public static HashMap<Integer, Boolean> currentWorkingThreads;
 
     static {
         pendingTxPool = new HashMap<>();
         //transactionsHistory = new HashMap<>();
         blockchain = new ArrayList<>();
         uTxoPool = new HashSet<>();
+        currentWorkingThreads = new HashMap<>();
+        try {
+            account = new Account();
+        } catch (InvalidAlgorithmParameterException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (NoSuchProviderException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) throws IOException {
         //beginListening();
         while(true){
-            System.out.println("Here");
+
         }
     }
 
@@ -75,8 +93,19 @@ public class Miner {
             if(getTransaction(txid) == null) {
                 pendingTxPool.put(txid, transaction);
                 populateUTxOPool(transaction);
+                if(pendingTxPool.size() > BLOCK_SIZE && !isMining()){
+                    startANewMiningThread();
+                }
             }
         }
+    }
+
+    private static boolean isMining() {
+        for(Boolean bool: currentWorkingThreads.values()){
+            if(bool)
+                return true;
+        }
+        return false;
     }
 
     private static void populateUTxOPool(Transaction transaction) {
@@ -152,7 +181,7 @@ public class Miner {
         }
     }
 
-    private static Transaction getTransaction(String previousTransactionHash) {
+    public static Transaction getTransaction(String previousTransactionHash) {
         if(pendingTxPool.containsKey(previousTransactionHash))
             return pendingTxPool.get(previousTransactionHash);
         else{
@@ -165,15 +194,50 @@ public class Miner {
     }
 
     public static synchronized void receivedNewBlock(Block block) {
-        // TODO: verify block before adding to blockchains
-        //boolean valid = validateBlock(block);
-        // TODO: handle forks
-        blockchain.add(block);
+        boolean valid = validateBlock(block);
+        if(valid){
+            invalidateAllMining();
+            updatePendingPool(block);
+            blockchain.add(block);
+            if(pendingTxPool.size() > BLOCK_SIZE && !isMining()){
+                startANewMiningThread();
+            }
+        }
+        // TODO: MAYBE A RACE CONDITION
+    }
+
+    private static void updatePendingPool(Block block) {
+        for(Transaction tx: block.transactions){
+            pendingTxPool.remove(tx.getHash());
+        }
+    }
+
+    private static void invalidateAllMining() {
+        for(Integer integer: currentWorkingThreads.keySet()){
+            currentWorkingThreads.put(integer, false);
+        }
     }
 
     private static boolean validateBlock(Block block){
         boolean condition1 = MerkleTree.getMerkleTreeRoot(block.transactions).equalsIgnoreCase(block.merkleRootHash);
         boolean condition2 = block.prevBlockHash.equalsIgnoreCase(blockchain.get(blockchain.size()-1).getHash());
         return condition1 && condition2;
+    }
+
+    public static void foundABlock(Block block, int hashCode) {
+        if(currentWorkingThreads.get(hashCode)){
+            //TODO: BROADCAST CURRENT BLOCK FOUND
+            updatePendingPool(block);
+            blockchain.add(block);
+            if(pendingTxPool.size() > BLOCK_SIZE && !isMining()){
+                startANewMiningThread();
+            }
+        }
+    }
+
+    public static void startANewMiningThread(){
+        Thread miner = new MinerThread();
+        miner.start();
+        currentWorkingThreads.put(miner.hashCode(), true);
     }
 }
