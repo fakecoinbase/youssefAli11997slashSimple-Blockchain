@@ -1,61 +1,99 @@
+import org.web3j.crypto.Sign;
+
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.math.BigInteger;
+import java.util.Arrays;
 
 public class Transaction implements Serializable {
-    private boolean witnessFlag;
-    private int inputCounter;
-    private Input[] inputs;
-    private int outputCounter;
-    private Output[] outputs;
+    public boolean witnessFlag;
+    public int inputCounter;
+    public Input[] inputs;
+    public Sign.SignatureData [] signatures;
+    public BigInteger publicKey;
+    public int outputCounter;
+    public Output[] outputs;
+    public Sign.SignatureData outputSignature;
 
-    public Transaction(boolean witnessFlag, int inputCounter, Input[] inputs, int outputCounter, Output[] outputs) {
+    public Transaction(boolean witnessFlag, int inputCounter, Sign.SignatureData [] signatures, Input[] inputs, BigInteger publicKey, int outputCounter, Output[] outputs, Sign.SignatureData outputSignature) {
         this.witnessFlag = witnessFlag;
         this.inputCounter = inputCounter;
         this.inputs = inputs;
+        this.signatures = signatures;
+        this.publicKey = publicKey;
         this.outputCounter = outputCounter;
         this.outputs = outputs;
+        this.outputSignature = outputSignature;
     }
 
     @Override
     public String toString() {
-        return "flag: " + witnessFlag + "\n" +
-                "ipCounter: " + inputCounter + "\n" +
-                "inputs size: " + inputs.length + "\n" +
-                "first input: " + inputs[0] + "\n";
+        return "Transaction{" +
+                "witnessFlag=" + witnessFlag +
+                ", inputCounter=" + inputCounter +
+                ", inputs=" + Arrays.toString(inputs) +
+                ", signatures=" + Arrays.hashCode(signatures) +
+                ", publicKey=" + publicKey +
+                ", outputCounter=" + outputCounter +
+                ", outputs=" + Arrays.toString(outputs) +
+                ", outputSignature=" + outputSignature.hashCode() +
+                '}';
+    }
+
+
+    public String getHash(){
+        return Hash.getSHA256(toString());
+    }
+
+    public boolean isCoinBase() {
+        return !witnessFlag;
     }
 }
 
 class Input implements Serializable {
-    String previousTransactionHash;
-    int outputIndex; // that is used as this input
-    String payerSignature;
-    String witness;
+    public String previousTransactionHash;
+    public int outputIndex; // that is used as this input
 
-    public Input(String previousTransactionHash, int outputIndex, String payerSignature, String witness) {
+    public Input(String previousTransactionHash, int outputIndex) {
         this.previousTransactionHash = previousTransactionHash;
         this.outputIndex = outputIndex;
-        this.payerSignature = payerSignature;
-        this.witness = witness;
     }
 
     @Override
     public String toString() {
-        return "prevTxHash: " + previousTransactionHash + "\n" +
-                "opIdx: " + outputIndex + "\n" +
-                "payerSignature: " + payerSignature + "\n" +
-                "witness: " + witness + "\n";
+        return "Input{" +
+                "previousTransactionHash='" + previousTransactionHash + '\'' +
+                ", outputIndex=" + outputIndex +
+                '}';
+    }
+
+    public String getHash(){
+        return Hash.getSHA256(toString());
     }
 }
 
 class Output implements Serializable {
-    int value;
-    int outputIndex;
-    String payeePublicKey;
+    public double value;
+    public int outputIndex;
+    public String address;
 
-    public Output(int value, int outputIndex, String payeePublicKey) {
+    public Output(double value, int outputIndex, String address) {
         this.value = value;
         this.outputIndex = outputIndex;
-        this.payeePublicKey = payeePublicKey;
+        this.address = address;
+    }
+
+    @Override
+    public String toString() {
+        return "Output{" +
+                "value=" + value +
+                ", outputIndex=" + outputIndex +
+                ", address='" + address + '\'' +
+                '}';
+    }
+
+    public String getHash(){
+        return Hash.getSHA256(toString());
     }
 }
