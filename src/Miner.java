@@ -108,6 +108,9 @@ public class Miner {
 
     private static boolean verifyTransaction(Transaction transaction) {
         if(transaction.isCoinBase()){
+            if(!Account.validateSignature(Arrays.toString(transaction.outputs), transaction.publicKey, transaction.outputSignature, false)){
+                return false;
+            }
             return true;
         }
         else{

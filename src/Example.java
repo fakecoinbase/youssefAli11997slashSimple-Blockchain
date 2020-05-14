@@ -50,7 +50,7 @@ public class Example {
         txs.add(t2);
         String prev = "PrevBlockSupposedToBeGenesisWillBeAddedSoon";
         Block bl = new Block(Hash.getSHA256(prev), MerkleTree.getMerkleTreeRoot(txs), txs);
-        Block newB = ProofOfWork.pow(bl, 10);
+        Block newB = ProofOfWork.pow(bl, 3);
         System.out.println(newB.nonce);
         System.out.println(newB.getHash());
     }
