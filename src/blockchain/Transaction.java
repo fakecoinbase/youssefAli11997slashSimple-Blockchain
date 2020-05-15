@@ -1,7 +1,8 @@
-import org.web3j.crypto.Sign;
+package blockchain;
 
-import java.io.IOException;
-import java.io.ObjectOutputStream;
+import org.web3j.crypto.Sign;
+import security_utils.Hash;
+
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -29,7 +30,7 @@ public class Transaction implements Serializable {
 
     @Override
     public String toString() {
-        return "Transaction{" +
+        return "blockchain.Transaction{" +
                 "witnessFlag=" + witnessFlag +
                 ", inputCounter=" + inputCounter +
                 ", inputs=" + Arrays.toString(inputs) +
@@ -48,52 +49,5 @@ public class Transaction implements Serializable {
 
     public boolean isCoinBase() {
         return !witnessFlag;
-    }
-}
-
-class Input implements Serializable {
-    public String previousTransactionHash;
-    public int outputIndex; // that is used as this input
-
-    public Input(String previousTransactionHash, int outputIndex) {
-        this.previousTransactionHash = previousTransactionHash;
-        this.outputIndex = outputIndex;
-    }
-
-    @Override
-    public String toString() {
-        return "Input{" +
-                "previousTransactionHash='" + previousTransactionHash + '\'' +
-                ", outputIndex=" + outputIndex +
-                '}';
-    }
-
-    public String getHash(){
-        return Hash.getSHA256(toString());
-    }
-}
-
-class Output implements Serializable {
-    public double value;
-    public int outputIndex;
-    public String address;
-
-    public Output(double value, int outputIndex, String address) {
-        this.value = value;
-        this.outputIndex = outputIndex;
-        this.address = address;
-    }
-
-    @Override
-    public String toString() {
-        return "Output{" +
-                "value=" + value +
-                ", outputIndex=" + outputIndex +
-                ", address='" + address + '\'' +
-                '}';
-    }
-
-    public String getHash(){
-        return Hash.getSHA256(toString());
     }
 }

@@ -1,3 +1,10 @@
+package nodes;
+
+import blockchain.*;
+import network.Broadcaster;
+import network.Listener;
+import security_utils.MerkleTree;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -7,12 +14,11 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
 
 public class Miner {
 
     public static HashMap<String, Transaction> pendingTxPool;
-    //private static HashMap<String, Transaction> transactionsHistory;
+    //private static HashMap<String, blockchain.Transaction> transactionsHistory;
     public static List<Block> blockchain;
     public static HashSet<String> uTxoPool;
     public static final int BLOCK_SIZE = 200;

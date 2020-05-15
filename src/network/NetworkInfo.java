@@ -1,3 +1,5 @@
+package network;
+
 public class NetworkInfo {
     public static class NodeInfo {
         String ipAddress;

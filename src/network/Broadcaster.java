@@ -1,4 +1,4 @@
-import jnr.constants.platform.Sock;
+package network;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -60,7 +60,6 @@ public class Broadcaster {
     }
 
     public void broadcast(String msg) {
-        connectWithPeers();
         for(DataOutputStream outputStream : outputStreams) {
             try {
                 outputStream.writeUTF(msg);
@@ -71,7 +70,6 @@ public class Broadcaster {
     }
 
     public void broadcast(Transaction transaction) {
-        connectWithPeers();
         for(DataOutputStream outputStream : outputStreams) {
             try {
                 ObjectOutputStream os = new ObjectOutputStream(outputStream);
@@ -83,7 +81,6 @@ public class Broadcaster {
     }
 
     public void broadcast(Block block) {
-        connectWithPeers();
         for(DataOutputStream outputStream : outputStreams) {
             try {
                 ObjectOutputStream os = new ObjectOutputStream(outputStream);

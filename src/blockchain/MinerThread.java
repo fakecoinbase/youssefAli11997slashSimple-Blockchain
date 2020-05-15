@@ -1,10 +1,11 @@
+package blockchain;
+
+import nodes.Miner;
 import org.web3j.crypto.Sign;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 
 public class MinerThread extends Thread {
 
@@ -12,7 +13,7 @@ public class MinerThread extends Thread {
     public void run() {
         ArrayList<Transaction> toBeIncludedInBlock = new ArrayList<>();
         int i = 0;
-        for(Map.Entry<String, Transaction> entry :Miner.pendingTxPool.entrySet()){
+        for(Map.Entry<String, Transaction> entry : Miner.pendingTxPool.entrySet()){
             toBeIncludedInBlock.add(entry.getValue());
             i++;
             if(i == Miner.BLOCK_SIZE)

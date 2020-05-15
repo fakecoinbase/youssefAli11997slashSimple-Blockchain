@@ -1,3 +1,5 @@
+package blockchain;
+
 import java.io.Serializable;
 import java.util.*;
 
@@ -26,7 +28,7 @@ public class Block implements Serializable {
 
     @Override
     public String toString() {
-        return "Block{" +
+        return "blockchain.Block{" +
                 "prevBlockHash='" + prevBlockHash + '\'' +
                 ", merkleRootHash='" + merkleRootHash + '\'' +
                 ", timestamp=" + timestamp +

@@ -1,17 +1,18 @@
-import org.web3j.crypto.Sign;
+package blockchain;
 
-import java.io.File;
+import blockchain.*;
+import nodes.Miner;
+import org.web3j.crypto.Sign;
+import security_utils.Hash;
+import security_utils.MerkleTree;
+
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Scanner;
 
 public class Example {
 

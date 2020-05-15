@@ -1,3 +1,5 @@
+package network;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -8,6 +10,7 @@ public class Listener extends Thread {
     private Socket socket = null;
     private DataInputStream dis =  null;
     private DataOutputStream dos = null;
+
 
     private final Object LOCK = new Object();
 
