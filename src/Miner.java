@@ -41,10 +41,10 @@ public class Miner {
     }
 
     public static void main(String[] args) throws IOException {
-        //beginListening();
-        while(true){
+        beginListening();
+        /*while(true){
 
-        }
+        }*/
     }
 
     public static void beginListening() throws IOException {
@@ -59,6 +59,8 @@ public class Miner {
             try {
                 // socket object to receive incoming client requests
                 socket = ss.accept();
+                Broadcaster.addNewSocket(socket);
+                Broadcaster.addNewOutputStream(new DataOutputStream(socket.getOutputStream()));
 
                 System.out.println("A new peer is connected : " + socket);
 

@@ -6,5 +6,6 @@ public class Wallet {
 
     public static void main(String[] args) throws IOException {
         broadcaster.connectWithPeers();
+        broadcaster.connectWithPeers();
     }
 }

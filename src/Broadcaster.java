@@ -1,15 +1,15 @@
+import jnr.constants.platform.Sock;
+
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class Broadcaster {
-    private List<Socket> sockets = new ArrayList<>();
+    private static Set<Socket> sockets = new HashSet<>();
     private Scanner input = new Scanner(System.in);
-    private List<DataOutputStream> outputStreams = new ArrayList<>();
+    private static List<DataOutputStream> outputStreams = new ArrayList<>();
 
     private NetworkInfo.NodeInfo myInfo;
 
@@ -23,6 +23,18 @@ public class Broadcaster {
             // skip my own node
             if(myInfo.ipAddress.equals(nodeInfo.ipAddress) && myInfo.port == nodeInfo.port)
                 continue;
+
+            // skip already connected to nodes
+            boolean shouldContinue = false;
+            for(Socket socket : sockets) {
+                String s = socket.getRemoteSocketAddress().toString();
+                String remoteIp = s.replace("/","").substring(0, s.indexOf(":")-1);
+                if(nodeInfo.ipAddress.equals(remoteIp) && nodeInfo.port == socket.getPort()){
+                    shouldContinue = true;
+                }
+            }
+
+            if(shouldContinue) continue;
 
             // establish a connection
             try {
@@ -40,7 +52,15 @@ public class Broadcaster {
         }
     }
 
+    public static void addNewSocket(Socket socket) {
+        sockets.add(socket);
+    }
+    public static void addNewOutputStream(DataOutputStream dos) {
+        outputStreams.add(dos);
+    }
+
     public void broadcast(String msg) {
+        connectWithPeers();
         for(DataOutputStream outputStream : outputStreams) {
             try {
                 outputStream.writeUTF(msg);
@@ -51,6 +71,7 @@ public class Broadcaster {
     }
 
     public void broadcast(Transaction transaction) {
+        connectWithPeers();
         for(DataOutputStream outputStream : outputStreams) {
             try {
                 ObjectOutputStream os = new ObjectOutputStream(outputStream);
@@ -62,6 +83,7 @@ public class Broadcaster {
     }
 
     public void broadcast(Block block) {
+        connectWithPeers();
         for(DataOutputStream outputStream : outputStreams) {
             try {
                 ObjectOutputStream os = new ObjectOutputStream(outputStream);
