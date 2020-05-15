@@ -2,6 +2,7 @@ package blockchain;
 
 import nodes.Miner;
 import org.web3j.crypto.Sign;
+import security_utils.MerkleTree;
 
 import java.util.ArrayList;
 import java.util.Arrays;

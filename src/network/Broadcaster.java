@@ -1,5 +1,8 @@
 package network;
 
+import blockchain.Block;
+import blockchain.Transaction;
+
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -11,14 +14,14 @@ public class Broadcaster {
     private Scanner input = new Scanner(System.in);
     private static List<DataOutputStream> outputStreams = new ArrayList<>();
 
-    private NetworkInfo.NodeInfo myInfo;
+    private NodeInfo myInfo;
 
-    Broadcaster(NetworkInfo.NodeInfo info) {
+    public Broadcaster(NodeInfo info) {
         myInfo = info;
     }
 
     public void connectWithPeers() {
-        for(NetworkInfo.NodeInfo nodeInfo : NetworkInfo.NODE_INFOS) {
+        for(NodeInfo nodeInfo : NetworkInfo.NODE_INFOS) {
 
             // skip my own node
             if(myInfo.ipAddress.equals(nodeInfo.ipAddress) && myInfo.port == nodeInfo.port)

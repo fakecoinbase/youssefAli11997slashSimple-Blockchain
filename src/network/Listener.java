@@ -1,5 +1,9 @@
 package network;
 
+import blockchain.Block;
+import blockchain.Transaction;
+import nodes.Miner;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
