@@ -28,11 +28,14 @@ public class Miner {
     public static boolean miningBlock = false;
     public static Account account;
     public static HashMap<Integer, Boolean> currentWorkingThreads;
+    public static int doubleSpending = 0;
+    public static int notValid = 0;
 
     static {
         pendingTxPool = new HashMap<>();
         //transactionsHistory = new HashMap<>();
         blockchain = new ArrayList<>();
+        blockchain.add(Block.getGenesisBlock());
         uTxoPool = new HashSet<>();
         currentWorkingThreads = new HashMap<>();
         try {
@@ -106,6 +109,10 @@ public class Miner {
                 }
             }
         }
+        if(!valid)
+            notValid ++;
+        if(!firstSpending)
+            doubleSpending ++;
     }
 
     private static boolean isMining() {
@@ -237,6 +244,7 @@ public class Miner {
             //TODO: BROADCAST CURRENT BLOCK FOUND
             updatePendingPool(block);
             blockchain.add(block);
+            System.out.println(block);
             if(pendingTxPool.size() > BLOCK_SIZE && !isMining()){
                 startANewMiningThread();
             }

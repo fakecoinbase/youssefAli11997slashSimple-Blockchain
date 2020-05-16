@@ -2,11 +2,13 @@ package blockchain;
 
 import blockchain.*;
 import nodes.Miner;
+import org.web3j.crypto.ECKeyPair;
 import org.web3j.crypto.Sign;
 import security_utils.Hash;
 import security_utils.MerkleTree;
 
 import java.io.FileNotFoundException;
+import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
@@ -17,7 +19,7 @@ import java.util.Arrays;
 public class Example {
 
     public static void main(String[] args) throws FileNotFoundException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException {
-        Account a0 = new Account(new BigInteger("70893185459726002695592608125398790426333873995722573030079532815328280498190"), new BigInteger("8215640083585108509366447839296126441084574042232327306701634491944088710415765502464597092981937927688869353556143662385303665231368190017969296472859459"));
+        /*Account a0 = new Account(new BigInteger("70893185459726002695592608125398790426333873995722573030079532815328280498190"), new BigInteger("8215640083585108509366447839296126441084574042232327306701634491944088710415765502464597092981937927688869353556143662385303665231368190017969296472859459"));
         System.out.println(a0.privateKey);
         System.out.println(a0.publicKey);
         Account a1 = new Account(new BigInteger("82271208259943611701582848519997004421462029627958678228983483907593411458324"), new BigInteger("3286623872192439214729904261484080141965504753974924126111814573191674956153250025532403318294624692814286073000869959678347177542365158516792121776399601"));
@@ -53,6 +55,14 @@ public class Example {
         Block bl = new Block(Hash.getSHA256(prev), MerkleTree.getMerkleTreeRoot(txs), txs);
         Block newB = ProofOfWork.pow(bl, 3);
         System.out.println(newB.nonce);
-        System.out.println(newB.getHash());
+        System.out.println(newB.getHash());*/
+        /*BigInteger publicKey = new BigInteger("70893185459726002695592608125398790426333873995722573030079532815328280498190");
+        BigInteger privateKey = new BigInteger("8215640083585108509366447839296126441084574042232327306701634491944088710415765502464597092981937927688869353556143662385303665231368190017969296472859459");
+        Output output = new Output(50, 0 , Account.getAddress(publicKey));
+        Output [] ots = new Output[]{output};
+        Sign.SignatureData signatureData = Account.signMessage(Arrays.toString(ots), new ECKeyPair(publicKey, privateKey), false);
+        System.out.println(Arrays.toString(signatureData.getV()));
+        System.out.println(Arrays.toString(signatureData.getR()));
+        System.out.println(Arrays.toString(signatureData.getS()));*/
     }
 }
