@@ -39,4 +39,23 @@ public class ProofOfWork {
        return false;
     }
 
+    public static boolean validatePow(Block bl, int diff){
+        String blockHash = bl.getHash();
+        StringBuffer binary =  new StringBuffer(new BigInteger(blockHash, 16).toString(2));
+        while(binary.length() < Hash.HASH_BITS_COUNT){
+            binary.insert(0, 0);
+        }
+        int i = 0;
+        while(diff > 0){
+            if(binary.charAt(i) == '0') {
+                diff--;
+            }
+            else{
+                return false;
+            }
+            i++;
+        }
+        return true;
+    }
+
 }

@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Scanner;
 
 public class DatasetParser {
-    public static String filePath = "/home/mashaal/Desktop/Simple Blockchain/txdataset_v2.txt";
+    public static String filePath = "/home/mashaal/Desktop/Simple Blockchain/txdataset_v2_minimal.txt";
     public static ArrayList<Account> accounts;
     //public static ArrayList<Transaction> transactions;
     public static HashMap<Integer, Transaction> transactions;
@@ -66,17 +66,16 @@ public class DatasetParser {
                     Output output = new Output(val, j, accounts.get(toIndex).address);
                     outputs.add(output);
                 }
-                transactions.put(txIndex, createTransaction(transactions.get(prevTxIndex), new Input[]{input}, accounts.get(accountIndex), outputs.toArray(new Output[outputs.size()])));
+                transactions.put(txIndex, createTransaction(new Input[]{input}, accounts.get(accountIndex), outputs.toArray(new Output[outputs.size()])));
             }
         }
         return transactions;
     }
 
-    private static Transaction createTransaction(Transaction prevTx,Input[] inputs, Account account, Output[] outputs) {
+    private static Transaction createTransaction(Input[] inputs, Account account, Output[] outputs) {
         Sign.SignatureData [] inputSig = new Sign.SignatureData[inputs.length];
         for(int i  = 0 ; i < inputs.length ; i ++){
-            Output output = prevTx.outputs[inputs[i].outputIndex];
-            inputSig[i] = account.signMessage(output.toString(), false);
+            inputSig[i] = account.signMessage(inputs[i].toString(), false);
         }
         Sign.SignatureData outputSig = account.signMessage(Arrays.toString(outputs), false);
         return new Transaction(true, inputs.length, inputSig, inputs, account.publicKey, outputs.length, outputs, outputSig);
