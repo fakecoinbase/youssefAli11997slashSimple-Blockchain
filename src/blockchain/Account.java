@@ -9,10 +9,10 @@ import java.math.BigInteger;
 import java.security.*;
 
 public class Account {
-    ECKeyPair keyPair;
-    BigInteger publicKey;
-    BigInteger privateKey;
-    String address;
+    public ECKeyPair keyPair;
+    public BigInteger publicKey;
+    public BigInteger privateKey;
+    public String address;
 
     public Account() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException {
         keyPair = Keys.createEcKeyPair();
@@ -28,8 +28,16 @@ public class Account {
         address = Keys.getAddress(keyPair);
     }
 
+    public static String getAddress(BigInteger publicKey){
+        return Keys.getAddress(publicKey);
+    }
 
     public Sign.SignatureData signMessage(String message, boolean toBeHashed){
+        byte[] msgHash = Hash.sha3(message.getBytes());
+        return Sign.signMessage(msgHash, keyPair, toBeHashed);
+    }
+
+    public static Sign.SignatureData signMessage(String message, ECKeyPair keyPair, boolean toBeHashed){
         byte[] msgHash = Hash.sha3(message.getBytes());
         return Sign.signMessage(msgHash, keyPair, toBeHashed);
     }

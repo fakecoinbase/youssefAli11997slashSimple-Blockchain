@@ -30,19 +30,21 @@ public class MinerThread extends Thread {
 
     private Transaction calculateCoinBase(ArrayList<Transaction> toBeIncludedInBlock) {
         double totalFees = 0;
-        for(Transaction tx: toBeIncludedInBlock){
-            double totalInput = 0;
-            for(int i = 0 ; i < tx.inputs.length ; i ++){
-                Transaction prevTx = Miner.getTransaction(tx.inputs[i].previousTransactionHash);
-                Output referenced = prevTx.outputs[tx.inputs[i].outputIndex];
-                totalInput += referenced.value;
+        for(Transaction tx: toBeIncludedInBlock) {
+            if (!tx.isCoinBase()) {
+                double totalInput = 0;
+                for (int i = 0; i < tx.inputs.length; i++) {
+                    Transaction prevTx = Miner.getTransaction(tx.inputs[i].previousTransactionHash);
+                    Output referenced = prevTx.outputs[tx.inputs[i].outputIndex];
+                    totalInput += referenced.value;
+                }
+                double totalOutput = 0;
+                for (int i = 0; i < tx.outputs.length; i++) {
+                    Output sent = tx.outputs[i];
+                    totalOutput += sent.value;
+                }
+                totalFees += (totalInput - totalOutput);
             }
-            double totalOutput = 0;
-            for(int i = 0 ; i < tx.outputs.length ; i ++){
-                Output sent = tx.outputs[i];
-                totalOutput += sent.value;
-            }
-            totalFees += (totalInput-totalOutput);
         }
         totalFees += Miner.BLOCK_REWARD;
         Output output = new Output(totalFees, 0, Miner.account.address);

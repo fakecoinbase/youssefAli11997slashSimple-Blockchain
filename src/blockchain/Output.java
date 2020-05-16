@@ -5,6 +5,7 @@ import security_utils.Hash;
 import java.io.Serializable;
 
 public class Output implements Serializable {
+    //TODO SUPPORT A SPECIFIC PRECISION OR USE BIG DECIMAL
     public double value;
     public int outputIndex;
     public String address;
