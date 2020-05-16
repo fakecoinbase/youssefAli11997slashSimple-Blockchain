@@ -30,7 +30,7 @@ public class Transaction implements Serializable {
 
     @Override
     public String toString() {
-        return "blockchain.Transaction{" +
+        return "Transaction{" +
                 "witnessFlag=" + witnessFlag +
                 ", inputCounter=" + inputCounter +
                 ", inputs=" + Arrays.toString(inputs) +

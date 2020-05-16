@@ -30,7 +30,7 @@ public class Block implements Serializable {
 
     @Override
     public String toString() {
-        return "blockchain.Block{" +
+        return "Block{" +
                 "prevBlockHash='" + prevBlockHash + '\'' +
                 ", merkleRootHash='" + merkleRootHash + '\'' +
                 ", timestamp=" + timestamp +
