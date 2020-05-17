@@ -168,7 +168,7 @@ public class Miner {
 
     private static boolean verifyTransaction(Transaction transaction) {
         if (transaction.isCoinBase()) {
-            if(!Account.validateSignature(transaction.inputs[i].toString(), transaction.publicKey, transaction.signatures[i], false)){
+            if (!Account.validateSignature(Arrays.toString(transaction.outputs), transaction.publicKey, transaction.outputSignature, false)) {
                 return false;
             }
             return true;
@@ -184,7 +184,7 @@ public class Miner {
                 if (!Account.validateAddress(transaction.publicKey, referenced.address)) {
                     return false;
                 }
-                if (!Account.validateSignature(referenced.toString(), transaction.publicKey, transaction.signatures[i], false)) {
+                if(!Account.validateSignature(transaction.inputs[i].toString(), transaction.publicKey, transaction.signatures[i], false)){
                     return false;
                 }
             }

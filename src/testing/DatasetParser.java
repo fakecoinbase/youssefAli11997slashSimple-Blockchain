@@ -67,7 +67,7 @@ public class DatasetParser {
                     outputs.add(output);
                 }
                 if(txIndex%10000 == 0)return transactions;
-                transactions.put(txIndex, createTransaction(new Input[]{input}, accounts.get(accountIndex), outputs.toArray(new Output[outputs.size()])),txIndex);
+                transactions.put(txIndex, createTransaction(new Input[]{input}, accounts.get(accountIndex), outputs.toArray(new Output[outputs.size()]),txIndex));
             }else{
                 System.out.println(tokens.length);
             }
@@ -83,7 +83,7 @@ public class DatasetParser {
 
         }
         Sign.SignatureData outputSig = account.signMessage(Arrays.toString(outputs), false);
-        return new Transaction(true, inputs.length, inputSig, inputs, account.publicKey, outputs.length, outputs, outputSig,index,int index);
+        return new Transaction(true, inputs.length, inputSig, inputs, account.publicKey, outputs.length, outputs, outputSig,index);
     }
 
     private static Transaction createNewCoinBase(double val, Account baseAccount, Account toAccount) {
