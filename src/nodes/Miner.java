@@ -168,7 +168,7 @@ public class Miner {
 
     private static boolean verifyTransaction(Transaction transaction) {
         if (transaction.isCoinBase()) {
-            if (!Account.validateSignature(Arrays.toString(transaction.outputs), transaction.publicKey, transaction.outputSignature, false)) {
+            if(!Account.validateSignature(transaction.inputs[i].toString(), transaction.publicKey, transaction.signatures[i], false)){
                 return false;
             }
             return true;
@@ -262,7 +262,9 @@ public class Miner {
     private static boolean validateBlock(Block block) {
         boolean condition1 = MerkleTree.getMerkleTreeRoot(block.transactions).equalsIgnoreCase(block.merkleRootHash);
         boolean condition2 = block.prevBlockHash.equalsIgnoreCase(blockchain.get(blockchain.size() - 1).getHash());
-        return condition1 && condition2;
+        boolean condition3 = ProofOfWork.validatePow(block, DIFF);
+        //Should Check If there are multiple coinbase but since the txdataset has multiple coinbase transactions we didn't
+        return condition1 && condition2 && condition3;
     }
 
     public static void foundABlock(Block block, int hashCode) {
