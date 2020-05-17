@@ -15,7 +15,7 @@ public class Input implements Serializable {
 
     @Override
     public String toString() {
-        return "blockchain.Input{" +
+        return "Input{" +
                 "previousTransactionHash='" + previousTransactionHash + '\'' +
                 ", outputIndex=" + outputIndex +
                 '}';

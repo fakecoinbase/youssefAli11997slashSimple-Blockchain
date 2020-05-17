@@ -3,9 +3,6 @@ package bft;
 import blockchain.*;
 import network.Broadcaster;
 import network.Listener;
-import network.NetworkInfo;
-import network.NodeInfo;
-import nodes.Miner;
 import security_utils.MerkleTree;
 
 import java.io.DataInputStream;
@@ -18,25 +15,21 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.*;
 
-public class Validator {
-    private static boolean isProposer = false;
-    private static final int NUMBER_OF_VALIDATORS = NetworkInfo.NODE_INFOS.length;
-    private static int currentProposer = -1;
-    private static Utils.State state = Utils.State.FINAL_COMMITED;
-    private static NodeInfo myInfo;
+public class MinerBFT {
+
     public static HashMap<String, Transaction> pendingTxPool;
     //private static HashMap<String, blockchain.Transaction> transactionsHistory;
     public static List<Block> blockchain;
     public static HashSet<String> uTxoPool;
-    //public static final int BLOCK_SIZE = 200;
+    public static final int BLOCK_SIZE = 200;
     public static final int BLOCK_REWARD = 5;
-    public static int WORKING_MODE = 1; //0 For POW | 1 For BFT
+    public static final int DIFF = 3;
+    public static int WORKING_MODE = 0; //0 For POW | 1 For BFT
+    public static boolean miningBlock = false;
     public static Account account;
     public static HashMap<Integer, Boolean> currentWorkingThreads;
     public static int doubleSpending = 0;
     public static int notValid = 0;
-
-    public static BFTBroadcaster bftBroadcaster;
 
     static {
         pendingTxPool = new HashMap<>();
@@ -56,78 +49,11 @@ public class Validator {
         }
     }
 
-    public Validator(NodeInfo info) {
-        myInfo = info;
-    }
+    public static void main(String[] args) throws IOException {
+        beginListening();
+        /*while(true){
 
-    public void newRoundPhase() {
-        // choosing the new validator in a round robin fashion
-        currentProposer++;
-        currentProposer %= NUMBER_OF_VALIDATORS;
-
-        // if current node is the validator
-        NodeInfo currentProposerInfo = NetworkInfo.NODE_INFOS[currentProposer];
-        if(currentProposerInfo.ipAddress.equals(myInfo.ipAddress)
-        && currentProposerInfo.port == myInfo.port) {
-            // proposer collects transactions from pool
-            // create a new block and broadcast it
-            collectPendingTransactions();
-
-            // change to pre-prepared state
-            state = Utils.State.PRE_PREPARED;
-        }
-
-    }
-
-    public void receivedPrePrepareMessage() {
-        // TODO: create message structure, verify it
-
-        // enter the pre-prepared state
-        state = Utils.State.PRE_PREPARED;
-
-        // verify the proposal (the sender and the block itself)
-        // TODO
-        //bftBroadcaster.broadcast(Prepare);
-    }
-
-    public void prePreparedPhase() {
-        // wait for 2*(#nodes) / 3 valid prepare messages
-
-        // then enter prepared state
-        state = Utils.State.PREPARED;
-
-        // TODO
-        //bftBroadcaster.broadcast(Commit);
-    }
-
-    public void preparedPhase() {
-        // wait for 2*(#nodes) / 3 valid commit messages
-
-        // then enter committed state
-        state = Utils.State.COMMITTED;
-    }
-
-    public void committedState() {
-        // TODO: validators append the received valid commit messages into the block
-
-        // add the block to the blockchain
-
-        // enter final-committed state
-        state = Utils.State.FINAL_COMMITED;
-    }
-
-    public static void collectPendingTransactions() {
-        ArrayList<Transaction> toBeIncludedInBlock = new ArrayList<>();
-        int i = 0;
-        for(Map.Entry<String, Transaction> entry : Miner.pendingTxPool.entrySet()){
-            toBeIncludedInBlock.add(entry.getValue());
-            i++;
-        }
-        //Transaction coinBase = calculateCoinBase(toBeIncludedInBlock);
-        //toBeIncludedInBlock.add(0, coinBase);
-        String root = MerkleTree.getMerkleTreeRoot(toBeIncludedInBlock);
-        Block toBeAdded = new Block(Miner.blockchain.get(Miner.blockchain.size()-1).getHash(), root, toBeIncludedInBlock);
-        formedABlock(toBeAdded);
+        }*/
     }
 
     public static void beginListening() throws IOException {
@@ -165,6 +91,7 @@ public class Validator {
     }
 
     public static synchronized void receivedNewTransaction(Transaction transaction) {
+        // TODO: verify transaction before adding to pending transactions
         boolean valid = false;
         boolean firstSpending = true;
         valid = verifyTransaction(transaction);
@@ -177,12 +104,23 @@ public class Validator {
             if(getTransaction(txid) == null) {
                 pendingTxPool.put(txid, transaction);
                 populateUTxOPool(transaction);
+                if(pendingTxPool.size() > BLOCK_SIZE && !isMining()){
+                    startANewMiningThread();
+                }
             }
         }
         if(!valid)
             notValid ++;
         if(!firstSpending)
             doubleSpending ++;
+    }
+
+    private static boolean isMining() {
+        for(Boolean bool: currentWorkingThreads.values()){
+            if(bool)
+                return true;
+        }
+        return false;
     }
 
     private static void populateUTxOPool(Transaction transaction) {
@@ -271,16 +209,27 @@ public class Validator {
     }
 
     public static synchronized void receivedNewBlock(Block block) {
-        // TODO: implement this methos
         boolean valid = validateBlock(block);
         if(valid){
+            invalidateAllMining();
             updatePendingPool(block);
+            blockchain.add(block);
+            if(pendingTxPool.size() > BLOCK_SIZE && !isMining()){
+                startANewMiningThread();
+            }
         }
+        // TODO: MAYBE A RACE CONDITION
     }
 
     private static void updatePendingPool(Block block) {
         for(Transaction tx: block.transactions){
             pendingTxPool.remove(tx.getHash());
+        }
+    }
+
+    private static void invalidateAllMining() {
+        for(Integer integer: currentWorkingThreads.keySet()){
+            currentWorkingThreads.put(integer, false);
         }
     }
 
@@ -290,10 +239,21 @@ public class Validator {
         return condition1 && condition2;
     }
 
-    public static void formedABlock(Block block) {
-        //TODO: BROADCAST CURRENT BLOCK FOUND
-        updatePendingPool(block);
-        blockchain.add(block);
-        System.out.println(block);
+    public static void foundABlock(Block block, int hashCode) {
+        if(currentWorkingThreads.get(hashCode)){
+            //TODO: BROADCAST CURRENT BLOCK FOUND
+            updatePendingPool(block);
+            blockchain.add(block);
+            System.out.println(block);
+            if(pendingTxPool.size() > BLOCK_SIZE && !isMining()){
+                startANewMiningThread();
+            }
+        }
+    }
+
+    public static void startANewMiningThread(){
+        Thread miner = new MinerThread();
+        miner.start();
+        currentWorkingThreads.put(miner.hashCode(), true);
     }
 }
