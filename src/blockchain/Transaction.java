@@ -16,7 +16,7 @@ public class Transaction implements Serializable {
     public int outputCounter;
     public Output[] outputs;
     public Sign.SignatureData outputSignature;
-
+    public int index;
     public Transaction(boolean witnessFlag, int inputCounter, Sign.SignatureData [] signatures, Input[] inputs, BigInteger publicKey, int outputCounter, Output[] outputs, Sign.SignatureData outputSignature) {
         this.witnessFlag = witnessFlag;
         this.inputCounter = inputCounter;
@@ -27,7 +27,17 @@ public class Transaction implements Serializable {
         this.outputs = outputs;
         this.outputSignature = outputSignature;
     }
-
+    public Transaction(boolean witnessFlag, int inputCounter, Sign.SignatureData [] signatures, Input[] inputs, BigInteger publicKey, int outputCounter, Output[] outputs, Sign.SignatureData outputSignature,int index) {
+        this.witnessFlag = witnessFlag;
+        this.inputCounter = inputCounter;
+        this.inputs = inputs;
+        this.signatures = signatures;
+        this.publicKey = publicKey;
+        this.outputCounter = outputCounter;
+        this.outputs = outputs;
+        this.outputSignature = outputSignature;
+        this.index=index;
+    }
     @Override
     public String toString() {
         return "blockchain.Transaction{" +
@@ -41,7 +51,9 @@ public class Transaction implements Serializable {
                 ", outputSignature=" + outputSignature.hashCode() +
                 '}';
     }
-
+    public void setIndex(int inde){
+        this.index=inde;
+    }
 
     public String getHash(){
         return Hash.getSHA256(toString());
