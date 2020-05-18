@@ -7,6 +7,9 @@ import security_utils.MerkleTree;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class Block implements Serializable {
@@ -37,6 +40,16 @@ public class Block implements Serializable {
         this.nonce = 0;
     }
 
+    public Block(String prevBlockHash, String merkleRootHash, List<Transaction> transactions, long timestamp) {
+        this.prevBlockHash = prevBlockHash;
+        this.merkleRootHash = merkleRootHash;
+        this.transactions = transactions;
+        this.transactionMap = new HashMap<>();
+        fillMap();
+        this.timestamp = timestamp;
+        this.nonce = 0;
+    }
+
     private void fillMap() {
         for(Transaction tx: transactions){
             transactionMap.put(tx.getHash(), tx);
@@ -56,7 +69,15 @@ public class Block implements Serializable {
                 publicKey, 1, outputs, signatureData);
         ArrayList<Transaction> txList = new ArrayList<>();
         txList.add(tx);
-        Block genesis = new Block(prevHash, MerkleTree.getMerkleTreeRoot(txList), txList);
+        DateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+        // you can change format of date
+        Date date = null;
+        try {
+            date = formatter.parse("15/05/2020");
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        Block genesis = new Block(prevHash, MerkleTree.getMerkleTreeRoot(txList), txList, date.getTime());
         return genesis;
     }
 

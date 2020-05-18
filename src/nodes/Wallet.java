@@ -16,7 +16,7 @@ import java.util.HashMap;
 public class Wallet {
     private static Broadcaster broadcaster = new Broadcaster(new NodeInfo("",4222));
 
-    public static void main(String[] args) throws IOException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException {
+    public static void main(String[] args) throws IOException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException, InterruptedException {
         broadcaster.connectWithPeers();
         HashMap<Integer, Transaction> txList = DatasetParser.getTransactions();
         ArrayList<Integer> keys =  new ArrayList<>(txList.keySet());
@@ -25,5 +25,6 @@ public class Wallet {
         for(Integer key: keys) {
             broadcaster.broadcast(txList.get(key));
         }
+        Thread.sleep(50000);
     }
 }

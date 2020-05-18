@@ -19,12 +19,12 @@ public class Miner {
     public static Broadcaster broadcaster;
     public volatile static LinkedHashMap<String, Transaction> pendingTxPool;
     public volatile static List<Block> blockchain;
-    public volatile static ArrayList<Block> staleBlocks;
+    public volatile static ArrayList<ArrayList<Block>> staleBlocks;
     public volatile static HashSet<String> uTxoPool;
     public static int nodeNumber;
     public static final int BLOCK_SIZE = 50;
     public static final int BLOCK_REWARD = 5;
-    public static final int DIFF = 20;
+    public static final int DIFF = 15;
     public static int WORKING_MODE = 0; //0 For POW | 1 For BFT
     public static Account account;
     public static HashMap<Integer, Boolean> currentWorkingThreads;
@@ -71,8 +71,7 @@ public class Miner {
             try {
                 // socket object to receive incoming client requests
                 socket = ss.accept();
-                Broadcaster.addNewSocket(socket);
-                Broadcaster.addNewOutputStream(new DataOutputStream(socket.getOutputStream()));
+                broadcaster.connectWithPeers();
 
                 System.out.println("A new peer is connected : " + socket);
 
@@ -233,9 +232,20 @@ public class Miner {
                 startANewMiningThread();
             }
         }
-        if(valid){
-            System.out.println("BLOCK REC STALE: " + block);
-            staleBlocks.add(block);
+        else{
+            int height = blockchain.size()-2;
+            boolean valid_old = validateBlock(block, height);
+            if(valid_old){
+                System.out.println("BLOCK REC VALID OLD: " + block);
+                if(staleBlocks.size() <= height) {
+                    ArrayList<Block> newList = new ArrayList<>();
+                    newList.add(block);
+                    staleBlocks.add(height, newList);
+                }
+                else{
+                    staleBlocks.get(height).add(block);
+                }
+            }
         }
     }
 
@@ -249,6 +259,14 @@ public class Miner {
         for (Integer integer : currentWorkingThreads.keySet()) {
             currentWorkingThreads.put(integer, false);
         }
+    }
+
+    private static boolean validateBlock(Block block, int height) {
+        boolean condition1 = MerkleTree.getMerkleTreeRoot(block.transactions).equalsIgnoreCase(block.merkleRootHash);
+        boolean condition2 = ProofOfWork.validatePow(block, DIFF);
+        boolean condition3 = block.prevBlockHash.equalsIgnoreCase(blockchain.get(height).getHash());
+        //Should Check If there are multiple coinbase but since the txdataset has multiple coinbase transactions we didn't
+        return condition1 && condition2 && condition3;
     }
 
     private static boolean validateBlock(Block block) {
