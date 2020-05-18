@@ -18,7 +18,7 @@ public class Output implements Serializable {
 
     @Override
     public String toString() {
-        return "blockchain.Output{" +
+        return "Output{" +
                 "value=" + value +
                 ", outputIndex=" + outputIndex +
                 ", address='" + address + '\'' +

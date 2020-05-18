@@ -1,8 +1,8 @@
 package network;
 
 public class NodeInfo {
-    String ipAddress;
-    int port;
+    public String ipAddress;
+    public int port;
 
     public NodeInfo(String ipAddress, int port) {
         this.ipAddress = ipAddress;
