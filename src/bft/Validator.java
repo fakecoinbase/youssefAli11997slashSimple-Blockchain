@@ -1,5 +1,8 @@
 package bft;
 
+import bft.messages.Commit;
+import bft.messages.PrePrepare;
+import bft.messages.Prepare;
 import blockchain.*;
 import network.Broadcaster;
 import network.Listener;
@@ -37,6 +40,10 @@ public class Validator {
     public static int notValid = 0;
 
     public static BFTBroadcaster bftBroadcaster;
+    public static Block currentWorkedOnBlock;
+
+    public static List<Prepare> prepareMessagesPool;
+    public static List<Commit> commitMessagesPool;
 
     static {
         pendingTxPool = new HashMap<>();
@@ -60,12 +67,16 @@ public class Validator {
         myInfo = info;
     }
 
-    public void newRoundPhase() {
+    public static void newRoundPhase() {
+
+        prepareMessagesPool.clear();
+        commitMessagesPool.clear();
+
         // choosing the new validator in a round robin fashion
         currentProposer++;
         currentProposer %= NUMBER_OF_VALIDATORS;
 
-        // if current node is the validator
+        // if current node is the proposer
         NodeInfo currentProposerInfo = NetworkInfo.NODE_INFOS[currentProposer];
         if(currentProposerInfo.ipAddress.equals(myInfo.ipAddress)
         && currentProposerInfo.port == myInfo.port) {
@@ -76,52 +87,59 @@ public class Validator {
             // change to pre-prepared state
             state = Utils.State.PRE_PREPARED;
         }
+        // else wait for the pre-prepare message
 
     }
 
-    public void receivedPrePrepareMessage() {
-        // TODO: create message structure, verify it
+    public static void receivedPrePrepareMessage(PrePrepare prePrepare) {
+        if(state != Utils.State.FINAL_COMMITED) return;
 
         // enter the pre-prepared state
         state = Utils.State.PRE_PREPARED;
 
         // verify the proposal (the sender and the block itself)
-        // TODO
-        //bftBroadcaster.broadcast(Prepare);
+        if(validatePrePrepare(prePrepare)) {
+            currentWorkedOnBlock = prePrepare.block;
+            bftBroadcaster.broadcast(new Prepare(currentWorkedOnBlock.getHash()));
+        }
     }
 
-    public void prePreparedPhase() {
-        // wait for 2*(#nodes) / 3 valid prepare messages
+    public static void receivedPrepareMessage(Prepare prepare) {
+        if(state != Utils.State.PRE_PREPARED) return;
 
-        // then enter prepared state
-        state = Utils.State.PREPARED;
-
-        // TODO
-        //bftBroadcaster.broadcast(Commit);
+        if(validatePrepare(prepare)) {
+            prepareMessagesPool.add(prepare);
+            // wait for 2*(#nodes) / 3 valid prepare messages
+            if(prepareMessagesPool.size() >= 2 * NUMBER_OF_VALIDATORS / 3) {
+                // then enter prepared state
+                state = Utils.State.PREPARED;
+                bftBroadcaster.broadcast(new Commit(currentWorkedOnBlock.getHash()));
+            }
+        }
     }
 
-    public void preparedPhase() {
-        // wait for 2*(#nodes) / 3 valid commit messages
+    public static void receivedCommitMessage(Commit commit) {
+        if(state != Utils.State.PREPARED) return;
 
-        // then enter committed state
-        state = Utils.State.COMMITTED;
-    }
-
-    public void committedState() {
-        // TODO: validators append the received valid commit messages into the block
-
-        // add the block to the blockchain
-
-        // enter final-committed state
-        state = Utils.State.FINAL_COMMITED;
+        if(validateCommit(commit)) {
+            commitMessagesPool.add(commit);
+            // wait for 2*(#nodes) / 3 valid commit messages
+            if(commitMessagesPool.size() >= 2 * NUMBER_OF_VALIDATORS / 3) {
+                // then enter committed state
+                state = Utils.State.COMMITTED;
+                bftBroadcaster.broadcast(new Commit(currentWorkedOnBlock.getHash()));
+                blockchain.add(currentWorkedOnBlock);
+                // TODO: validators append the received valid commit messages into the block
+                state = Utils.State.FINAL_COMMITED;
+                newRoundPhase();
+            }
+        }
     }
 
     public static void collectPendingTransactions() {
         ArrayList<Transaction> toBeIncludedInBlock = new ArrayList<>();
-        int i = 0;
         for(Map.Entry<String, Transaction> entry : Miner.pendingTxPool.entrySet()){
             toBeIncludedInBlock.add(entry.getValue());
-            i++;
         }
         //Transaction coinBase = calculateCoinBase(toBeIncludedInBlock);
         //toBeIncludedInBlock.add(0, coinBase);
@@ -271,7 +289,7 @@ public class Validator {
     }
 
     public static synchronized void receivedNewBlock(Block block) {
-        // TODO: implement this methos
+        // TODO: implement this method
         boolean valid = validateBlock(block);
         if(valid){
             updatePendingPool(block);
@@ -290,8 +308,22 @@ public class Validator {
         return condition1 && condition2;
     }
 
+
+    public static boolean validatePrePrepare(PrePrepare prePrepare) {
+        boolean isValidBlock = validateBlock(prePrepare.block);
+        return isValidBlock;
+    }
+
+    public static boolean validatePrepare(Prepare prepare) {
+        return prepare.blockHash.equalsIgnoreCase(currentWorkedOnBlock.getHash());
+    }
+
+    public static boolean validateCommit(Commit commit) {
+        return commit.blockHash.equalsIgnoreCase(currentWorkedOnBlock.getHash());
+    }
+
     public static void formedABlock(Block block) {
-        //TODO: BROADCAST CURRENT BLOCK FOUND
+        bftBroadcaster.broadcast(new PrePrepare(block));
         updatePendingPool(block);
         blockchain.add(block);
         System.out.println(block);

@@ -1,9 +1,19 @@
 package bft.messages;
 
+import bft.Validator;
 import blockchain.Block;
+import org.web3j.crypto.Sign;
+
+import java.math.BigInteger;
 
 public class PrePrepare {
-    private Block block;
-    private String publicKey;
-    private String signature;
+    public Block block;
+    public BigInteger publicKey;
+    public Sign.SignatureData signature;
+
+
+    public PrePrepare(Block block, BigInteger publicKey) {
+        this.block = block;
+        this.publicKey = publicKey;
+    }
 }

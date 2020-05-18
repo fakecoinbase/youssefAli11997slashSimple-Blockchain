@@ -1,5 +1,8 @@
 package bft;
 
+import bft.messages.Commit;
+import bft.messages.PrePrepare;
+import bft.messages.Prepare;
 import blockchain.Block;
 import blockchain.Transaction;
 import nodes.Miner;
@@ -32,13 +35,25 @@ public class BFTListener extends Thread {
 
             if(object instanceof Transaction) {
                 Transaction transaction = (Transaction) object;
-                Miner.receivedNewTransaction(transaction);
+                Validator.receivedNewTransaction(transaction);
 
                 System.out.println(transaction.toString());
             }
             else if(object instanceof Block) {
                 Block block = (Block) object;
-                Miner.receivedNewBlock(block);
+                Validator.receivedNewBlock(block);
+            }
+            else if(object instanceof PrePrepare) {
+                PrePrepare prePrepare = (PrePrepare) object;
+                Validator.receivedPrePrepareMessage(prePrepare);
+            }
+            else if(object instanceof Prepare) {
+                Prepare prepare = (Prepare) object;
+                Validator.receivedPrepareMessage(prepare);
+            }
+            else if(object instanceof Commit) {
+                Commit commit = (Commit) object;
+                Validator.receivedCommitMessage(commit);
             }
         }
         catch (IOException | ClassNotFoundException e) {
