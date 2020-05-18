@@ -39,7 +39,7 @@ public class BFTListener extends Thread {
 
                 System.out.println(transaction.toString());
             }
-            else if(object instanceof Block) {
+            else if(object instanceof Block) { // is not really used in BFT
                 Block block = (Block) object;
                 Validator.receivedNewBlock(block);
             }

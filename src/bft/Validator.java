@@ -9,6 +9,7 @@ import network.Listener;
 import network.NetworkInfo;
 import network.NodeInfo;
 import nodes.Miner;
+import org.web3j.crypto.Sign;
 import security_utils.MerkleTree;
 
 import java.io.DataInputStream;
@@ -100,7 +101,8 @@ public class Validator {
         // verify the proposal (the sender and the block itself)
         if(validatePrePrepare(prePrepare)) {
             currentWorkedOnBlock = prePrepare.block;
-            bftBroadcaster.broadcast(new Prepare(currentWorkedOnBlock.getHash()));
+            Sign.SignatureData signature = account.signMessage(currentWorkedOnBlock.getHash(), false);
+            bftBroadcaster.broadcast(new Prepare(currentWorkedOnBlock.getHash(), account.publicKey, signature));
         }
     }
 
@@ -113,7 +115,8 @@ public class Validator {
             if(prepareMessagesPool.size() >= 2 * NUMBER_OF_VALIDATORS / 3) {
                 // then enter prepared state
                 state = Utils.State.PREPARED;
-                bftBroadcaster.broadcast(new Commit(currentWorkedOnBlock.getHash()));
+                Sign.SignatureData signature = account.signMessage(currentWorkedOnBlock.getHash(), false);
+                bftBroadcaster.broadcast(new Commit(currentWorkedOnBlock.getHash(), account.publicKey, signature));
             }
         }
     }
@@ -127,7 +130,6 @@ public class Validator {
             if(commitMessagesPool.size() >= 2 * NUMBER_OF_VALIDATORS / 3) {
                 // then enter committed state
                 state = Utils.State.COMMITTED;
-                bftBroadcaster.broadcast(new Commit(currentWorkedOnBlock.getHash()));
                 blockchain.add(currentWorkedOnBlock);
                 // TODO: validators append the received valid commit messages into the block
                 state = Utils.State.FINAL_COMMITED;
@@ -289,7 +291,6 @@ public class Validator {
     }
 
     public static synchronized void receivedNewBlock(Block block) {
-        // TODO: implement this method
         boolean valid = validateBlock(block);
         if(valid){
             updatePendingPool(block);
@@ -311,19 +312,25 @@ public class Validator {
 
     public static boolean validatePrePrepare(PrePrepare prePrepare) {
         boolean isValidBlock = validateBlock(prePrepare.block);
-        return isValidBlock;
+        boolean isValidSignature = Account.validateSignature(prePrepare.block.toString(), prePrepare.publicKey, prePrepare.signature, false);
+        return isValidBlock && isValidSignature;
     }
 
     public static boolean validatePrepare(Prepare prepare) {
-        return prepare.blockHash.equalsIgnoreCase(currentWorkedOnBlock.getHash());
+        boolean isValidBlockHash = prepare.blockHash.equalsIgnoreCase(currentWorkedOnBlock.getHash());
+        boolean isValidSignature = Account.validateSignature(prepare.blockHash, prepare.publicKey, prepare.signature, false);
+        return isValidBlockHash && isValidSignature;
     }
 
     public static boolean validateCommit(Commit commit) {
-        return commit.blockHash.equalsIgnoreCase(currentWorkedOnBlock.getHash());
+        boolean isValidBlockHash = commit.blockHash.equalsIgnoreCase(currentWorkedOnBlock.getHash());
+        boolean isValidSignature = Account.validateSignature(commit.blockHash, commit.publicKey, commit.signature, false);
+        return isValidBlockHash && isValidSignature;
     }
 
     public static void formedABlock(Block block) {
-        bftBroadcaster.broadcast(new PrePrepare(block));
+        Sign.SignatureData signature = account.signMessage(block.toString(), false);
+        bftBroadcaster.broadcast(new PrePrepare(block, account.publicKey, signature));
         updatePendingPool(block);
         blockchain.add(block);
         System.out.println(block);

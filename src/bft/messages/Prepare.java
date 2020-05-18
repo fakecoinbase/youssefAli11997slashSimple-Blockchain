@@ -9,8 +9,9 @@ public class Prepare {
     public BigInteger publicKey;
     public Sign.SignatureData signature;
 
-
-    public Prepare(String blockHash) {
+    public Prepare(String blockHash, BigInteger publicKey, Sign.SignatureData signature) {
         this.blockHash = blockHash;
+        this.publicKey = publicKey;
+        this.signature = signature;
     }
 }

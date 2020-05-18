@@ -12,8 +12,9 @@ public class PrePrepare {
     public Sign.SignatureData signature;
 
 
-    public PrePrepare(Block block, BigInteger publicKey) {
+    public PrePrepare(Block block, BigInteger publicKey, Sign.SignatureData signature) {
         this.block = block;
         this.publicKey = publicKey;
+        this.signature = signature;
     }
 }

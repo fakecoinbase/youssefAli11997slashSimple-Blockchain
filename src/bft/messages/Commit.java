@@ -10,7 +10,9 @@ public class Commit {
     public Sign.SignatureData signature;
 
 
-    public Commit(String blockHash) {
+    public Commit(String blockHash, BigInteger publicKey, Sign.SignatureData signature) {
         this.blockHash = blockHash;
+        this.publicKey = publicKey;
+        this.signature = signature;
     }
 }
