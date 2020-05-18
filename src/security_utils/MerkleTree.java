@@ -14,7 +14,6 @@ public class MerkleTree {
             listOfHashes.add(listOfHashes.get(listOfHashes.size()-1));
         }
         ArrayList<String> res = listOfHashes;
-        System.out.println(res.size());
         while(res.size() != 1){
             ArrayList<String> tmp = new ArrayList<>();
             for(int i = 0 ; i < res.size() ; i += 2){

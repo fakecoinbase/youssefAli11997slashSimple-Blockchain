@@ -16,11 +16,14 @@ public class Block implements Serializable {
     public long timestamp = new Date().getTime();
     public int nonce;
     public List<Transaction> transactions;
+    public HashMap<String, Transaction> transactionMap;
 
     public Block(Block bl){
         this.prevBlockHash = bl.prevBlockHash;
         this.merkleRootHash = bl.merkleRootHash;
         this.transactions = bl.transactions;
+        this.transactionMap = new HashMap<>();
+        fillMap();
         this.timestamp = bl.timestamp;
         this.nonce = bl.nonce;
     }
@@ -29,7 +32,15 @@ public class Block implements Serializable {
         this.prevBlockHash = prevBlockHash;
         this.merkleRootHash = merkleRootHash;
         this.transactions = transactions;
+        this.transactionMap = new HashMap<>();
+        fillMap();
         this.nonce = 0;
+    }
+
+    private void fillMap() {
+        for(Transaction tx: transactions){
+            transactionMap.put(tx.getHash(), tx);
+        }
     }
 
     public static Block getGenesisBlock(){
@@ -65,20 +76,12 @@ public class Block implements Serializable {
     }
 
     public boolean contains(String txid){
-        HashSet<String> txSet = new HashSet<>();
-        for(Transaction tx: transactions){
-            if(tx.getHash().equalsIgnoreCase(txid))
-                return true;
-        }
+        if(transactionMap.containsKey(txid))
+            return true;
         return false;
     }
 
     public Transaction get(String txid){
-        HashSet<String> txSet = new HashSet<>();
-        for(Transaction tx: transactions){
-            if(tx.getHash().equalsIgnoreCase(txid))
-                return tx;
-        }
-        return null;
+        return transactionMap.getOrDefault(txid, null);
     }
 }

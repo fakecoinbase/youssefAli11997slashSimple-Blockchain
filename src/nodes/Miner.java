@@ -5,9 +5,7 @@ import network.Broadcaster;
 import network.Listener;
 import security_utils.MerkleTree;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.InvalidAlgorithmParameterException;
@@ -17,13 +15,13 @@ import java.util.*;
 
 public class Miner {
 
-    public static HashMap<String, Transaction> pendingTxPool;
+    public volatile static HashMap<String, Transaction> pendingTxPool;
     //private static HashMap<String, blockchain.Transaction> transactionsHistory;
-    public static List<Block> blockchain;
-    public static HashSet<String> uTxoPool;
+    public volatile static List<Block> blockchain;
+    public volatile static HashSet<String> uTxoPool;
     public static final int BLOCK_SIZE = 200;
     public static final int BLOCK_REWARD = 5;
-    public static final int DIFF = 3;
+    public static final int DIFF = 1;
     public static int WORKING_MODE = 0; //0 For POW | 1 For BFT
     public static boolean miningBlock = false;
     public static Account account;
@@ -32,7 +30,6 @@ public class Miner {
     public static int notValid = 0;
     public static int validd=0;
     public static int blockss=0;
-
 
     static {
         pendingTxPool = new HashMap<>();
@@ -115,10 +112,11 @@ public class Miner {
         }
         if (!valid) {
             notValid++;
-            System.out.println("Invalid Transaction "+transaction.index);
+            //System.out.println("Invalid Transaction "+transaction.index);
         }
-        if (!firstSpending)
+        if (!firstSpending){
             doubleSpending++;
+        }
     }
 
     private static boolean isMining() {
@@ -133,11 +131,7 @@ public class Miner {
         // remove all spent UTXOs
         if (!transaction.isCoinBase()) {
             for (int i = 0; i < transaction.inputs.length; i++) {
-                Transaction prevTx=null;
-                do {
-                    prevTx = getTransaction(transaction.inputs[i].previousTransactionHash);
-                    if(prevTx==null)System.out.println(transaction.index+" 3");
-                }while(prevTx==null);
+                Transaction prevTx= getTransaction(transaction.inputs[i].previousTransactionHash);
                 Output spent = prevTx.outputs[transaction.inputs[i].outputIndex];
                 uTxoPool.remove(spent.getHash());
 
@@ -152,12 +146,7 @@ public class Miner {
 
     private static boolean ensureNoDoubleSpending(Transaction transaction) {
         for (int i = 0; i < transaction.inputs.length; i++) {
-            Transaction prevTx = null;
-            do {
-                prevTx = getTransaction(transaction.inputs[i].previousTransactionHash);
-                if(prevTx==null)System.out.println(transaction.index+" 4");
-
-            }while(prevTx==null);
+            Transaction prevTx= getTransaction(transaction.inputs[i].previousTransactionHash);
             Output output = prevTx.outputs[transaction.inputs[i].outputIndex];
             if (!uTxoPool.contains(output.getHash())) {
                 return false;
@@ -197,12 +186,7 @@ public class Miner {
             //validate Value Sent
             double totalInput = 0;
             for (int i = 0; i < transaction.inputs.length; i++) {
-                Transaction prevTx = null;
-                do {
-                    prevTx = getTransaction(transaction.inputs[i].previousTransactionHash);
-                    if(prevTx==null)System.out.println(transaction.index+" 2");
-
-                } while (prevTx == null);
+                Transaction prevTx = getTransaction(transaction.inputs[i].previousTransactionHash);
                 Output referenced = prevTx.outputs[transaction.inputs[i].outputIndex];
                 totalInput += referenced.value;
             }
@@ -219,18 +203,17 @@ public class Miner {
     }
 
     public static synchronized Transaction getTransaction(String previousTransactionHash) {
+        // search previous blocks
+        for (int i = 0 ;i<blockchain.size();i++) {
+            Block bl = blockchain.get(i);
+            if (bl.contains(previousTransactionHash))
+                return bl.get(previousTransactionHash);
+        }
+
+        // search pending
         if (pendingTxPool.containsKey(previousTransactionHash))
             return pendingTxPool.get(previousTransactionHash);
-        else {
 
-            for (int i = 0 ;i<blockchain.size();i++) {
-                Block bl = blockchain.get(i);
-                if (bl.contains(previousTransactionHash))
-                    return bl.get(previousTransactionHash);
-
-                // System.out.println(previousTransactionHash + " not found");
-            }
-        }
         return null;
     }
 
@@ -270,10 +253,9 @@ public class Miner {
     public static void foundABlock(Block block, int hashCode) {
         if (currentWorkingThreads.get(hashCode)) {
             //TODO: BROADCAST CURRENT BLOCK FOUND
-            updatePendingPool(block);
             blockchain.add(block);
+            updatePendingPool(block);
             currentWorkingThreads.put(hashCode,false);
-            System.out.println(block);
             if (pendingTxPool.size() > BLOCK_SIZE && !isMining()) {
                 startANewMiningThread();
             }

@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Scanner;
 
 public class DatasetParser {
-    public static String filePath = "/home/ahmed/Simple-Blockchain/data/txdataset_v3.txt";
+    public static String filePath = "/home/mashaal/Desktop/Simple Blockchain/txdataset_v2.txt";
     public static ArrayList<Account> accounts;
     //public static ArrayList<Transaction> transactions;
     public static HashMap<Integer, Transaction> transactions;
@@ -66,10 +66,10 @@ public class DatasetParser {
                     Output output = new Output(val, j, accounts.get(toIndex).address);
                     outputs.add(output);
                 }
-                if(txIndex%10000 == 0)return transactions;
+                //if(txIndex%10000 == 0)return transactions;
                 transactions.put(txIndex, createTransaction(new Input[]{input}, accounts.get(accountIndex), outputs.toArray(new Output[outputs.size()]),txIndex));
             }else{
-                System.out.println(tokens.length);
+                System.out.println("Tokens: " + tokens.length);
             }
 
         }
