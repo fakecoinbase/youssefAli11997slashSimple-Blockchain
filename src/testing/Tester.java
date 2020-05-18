@@ -11,7 +11,7 @@ import java.security.NoSuchProviderException;
 import java.util.*;
 
 public class Tester {
-    public static String filePath = "/home/mashaal/Desktop/Simple Blockchain/doublespends_v2.txt";
+    public static String filePath = "/home/ahmed/Simple-Blockchain/data/txdataset_v3.txt";
 
     public static void main(String [] args) throws NoSuchAlgorithmException, FileNotFoundException, InvalidAlgorithmParameterException, NoSuchProviderException {
         File dataSet = new File(filePath);
@@ -26,11 +26,15 @@ public class Tester {
         ArrayList<Integer> keys =  new ArrayList<>(txList.keySet());
         Collections.sort(keys);
         System.out.println("Map Size: " + txList.size());
-        for(Integer key: keys)
+        for(Integer key: keys) {
+            System.out.println(key);
             Miner.receivedNewTransaction(txList.get(key));
+        }
         System.out.println("Total Double Spent: " +  Miner.doubleSpending);
         System.out.println("Total Not Valid: " + Miner.notValid);
         System.out.println("Total Blockchain size: " + Miner.blockchain.size());
+        System.out.println("Total Valid Txs: " + Miner.validd);
+        System.out.println("Total Blockss: " + Miner.blockss);
         System.out.println("Total lastBlock: " + Miner.blockchain.get(Miner.blockchain.size()-1));
     }
 }

@@ -30,6 +30,9 @@ public class Miner {
     public static HashMap<Integer, Boolean> currentWorkingThreads;
     public static int doubleSpending = 0;
     public static int notValid = 0;
+    public static int validd=0;
+    public static int blockss=0;
+
 
     static {
         pendingTxPool = new HashMap<>();
@@ -82,8 +85,7 @@ public class Miner {
                 Thread t = new Listener(socket, dis, dos);
                 t.start();
 
-            }
-            catch (Exception e){
+            } catch (Exception e) {
                 socket.close();
                 e.printStackTrace();
             }
@@ -95,29 +97,33 @@ public class Miner {
         boolean valid = false;
         boolean firstSpending = true;
         valid = verifyTransaction(transaction);
-        if(valid){
-            if(!transaction.isCoinBase())
+        if (valid) {
+            if (!transaction.isCoinBase())
                 firstSpending = ensureNoDoubleSpending(transaction);
         }
-        if(valid && firstSpending){
+        if (valid && firstSpending) {
             String txid = transaction.getHash();
-            if(getTransaction(txid) == null) {
+            if (getTransaction(txid) == null) {
                 pendingTxPool.put(txid, transaction);
                 populateUTxOPool(transaction);
-                if(pendingTxPool.size() > BLOCK_SIZE && !isMining()){
+                if (pendingTxPool.size() > BLOCK_SIZE && !isMining()) {
                     startANewMiningThread();
+                    blockss++;
                 }
             }
+            validd++;
         }
-        if(!valid)
-            notValid ++;
-        if(!firstSpending)
-            doubleSpending ++;
+        if (!valid) {
+            notValid++;
+            System.out.println("Invalid Transaction "+transaction.index);
+        }
+        if (!firstSpending)
+            doubleSpending++;
     }
 
     private static boolean isMining() {
-        for(Boolean bool: currentWorkingThreads.values()){
-            if(bool)
+        for (Boolean bool : currentWorkingThreads.values()) {
+            if (bool)
                 return true;
         }
         return false;
@@ -125,25 +131,35 @@ public class Miner {
 
     private static void populateUTxOPool(Transaction transaction) {
         // remove all spent UTXOs
-        if(!transaction.isCoinBase()) {
+        if (!transaction.isCoinBase()) {
             for (int i = 0; i < transaction.inputs.length; i++) {
-                Transaction prevTx = getTransaction(transaction.inputs[i].previousTransactionHash);
+                Transaction prevTx=null;
+                do {
+                    prevTx = getTransaction(transaction.inputs[i].previousTransactionHash);
+                    if(prevTx==null)System.out.println(transaction.index+" 3");
+                }while(prevTx==null);
                 Output spent = prevTx.outputs[transaction.inputs[i].outputIndex];
                 uTxoPool.remove(spent.getHash());
+
             }
         }
         //add all UTXOs
-        for(int i = 0 ; i < transaction.outputs.length ; i ++){
+        for (int i = 0; i < transaction.outputs.length; i++) {
             Output unSpent = transaction.outputs[i];
             uTxoPool.add(unSpent.getHash());
         }
     }
 
     private static boolean ensureNoDoubleSpending(Transaction transaction) {
-        for(int i = 0 ; i < transaction.inputs.length ; i ++){
-            Transaction prevTx = getTransaction(transaction.inputs[i].previousTransactionHash);
+        for (int i = 0; i < transaction.inputs.length; i++) {
+            Transaction prevTx = null;
+            do {
+                prevTx = getTransaction(transaction.inputs[i].previousTransactionHash);
+                if(prevTx==null)System.out.println(transaction.index+" 4");
+
+            }while(prevTx==null);
             Output output = prevTx.outputs[transaction.inputs[i].outputIndex];
-            if(!uTxoPool.contains(output.getHash())){
+            if (!uTxoPool.contains(output.getHash())) {
                 return false;
             }
         }
@@ -151,70 +167,80 @@ public class Miner {
     }
 
     private static boolean verifyTransaction(Transaction transaction) {
-        if(transaction.isCoinBase()){
-            if(!Account.validateSignature(Arrays.toString(transaction.outputs), transaction.publicKey, transaction.outputSignature, false)){
+        if (transaction.isCoinBase()) {
+            if (!Account.validateSignature(Arrays.toString(transaction.outputs), transaction.publicKey, transaction.outputSignature, false)) {
                 return false;
             }
             return true;
-        }
-        else{
+        } else {
             // validate Inputs
-            for(int i = 0 ; i < transaction.inputs.length ; i ++){
-                Transaction prevTx = getTransaction(transaction.inputs[i].previousTransactionHash);
-                if(prevTx == null)
+            for (int i = 0; i < transaction.inputs.length; i++) {
+                Transaction prevTx = null;
+                prevTx = getTransaction(transaction.inputs[i].previousTransactionHash);
+                //  if(prevTx==null)System.out.println(transaction.index+"  1");
+                if (prevTx == null)
                     return false;
                 Output referenced = prevTx.outputs[transaction.inputs[i].outputIndex];
-                if(!Account.validateAddress(transaction.publicKey, referenced.address)){
+                if (!Account.validateAddress(transaction.publicKey, referenced.address)) {
                     return false;
                 }
-                if(!Account.validateSignature(referenced.toString(), transaction.publicKey, transaction.signatures[i], false)){
+                if(!Account.validateSignature(transaction.inputs[i].toString(), transaction.publicKey, transaction.signatures[i], false)){
                     return false;
                 }
             }
 
             //validate Outputs
-            if(!Account.validateSignature(Arrays.toString(transaction.outputs), transaction.publicKey, transaction.outputSignature, false)){
+            if (!Account.validateSignature(Arrays.toString(transaction.outputs), transaction.publicKey, transaction.outputSignature, false)) {
                 return false;
             }
 
             //validate Value Sent
             double totalInput = 0;
-            for(int i = 0 ; i < transaction.inputs.length ; i ++){
-                Transaction prevTx = getTransaction(transaction.inputs[i].previousTransactionHash);
+            for (int i = 0; i < transaction.inputs.length; i++) {
+                Transaction prevTx = null;
+                do {
+                    prevTx = getTransaction(transaction.inputs[i].previousTransactionHash);
+                    if(prevTx==null)System.out.println(transaction.index+" 2");
+
+                } while (prevTx == null);
                 Output referenced = prevTx.outputs[transaction.inputs[i].outputIndex];
                 totalInput += referenced.value;
             }
             double totalOutput = 0;
-            for(int i = 0 ; i < transaction.outputs.length ; i ++){
+            for (int i = 0; i < transaction.outputs.length; i++) {
                 Output sent = transaction.outputs[i];
                 totalOutput += sent.value;
             }
-            if(totalInput < totalOutput){
+            if (totalInput < totalOutput) {
                 return false;
             }
             return true;
         }
     }
 
-    public static Transaction getTransaction(String previousTransactionHash) {
-        if(pendingTxPool.containsKey(previousTransactionHash))
+    public static synchronized Transaction getTransaction(String previousTransactionHash) {
+        if (pendingTxPool.containsKey(previousTransactionHash))
             return pendingTxPool.get(previousTransactionHash);
-        else{
-            for(Block bl: blockchain){
-                if(bl.contains(previousTransactionHash))
+        else {
+
+            for (int i = 0 ;i<blockchain.size();i++) {
+                Block bl = blockchain.get(i);
+                if (bl.contains(previousTransactionHash))
                     return bl.get(previousTransactionHash);
+
+                // System.out.println(previousTransactionHash + " not found");
             }
-            return null;
         }
+        return null;
     }
 
     public static synchronized void receivedNewBlock(Block block) {
         boolean valid = validateBlock(block);
-        if(valid){
+        if (valid) {
             invalidateAllMining();
             updatePendingPool(block);
             blockchain.add(block);
-            if(pendingTxPool.size() > BLOCK_SIZE && !isMining()){
+            if (pendingTxPool.size() > BLOCK_SIZE && !isMining()) {
                 startANewMiningThread();
             }
         }
@@ -222,36 +248,39 @@ public class Miner {
     }
 
     private static void updatePendingPool(Block block) {
-        for(Transaction tx: block.transactions){
+        for (Transaction tx : block.transactions) {
             pendingTxPool.remove(tx.getHash());
         }
     }
 
     private static void invalidateAllMining() {
-        for(Integer integer: currentWorkingThreads.keySet()){
+        for (Integer integer : currentWorkingThreads.keySet()) {
             currentWorkingThreads.put(integer, false);
         }
     }
 
-    private static boolean validateBlock(Block block){
+    private static boolean validateBlock(Block block) {
         boolean condition1 = MerkleTree.getMerkleTreeRoot(block.transactions).equalsIgnoreCase(block.merkleRootHash);
-        boolean condition2 = block.prevBlockHash.equalsIgnoreCase(blockchain.get(blockchain.size()-1).getHash());
-        return condition1 && condition2;
+        boolean condition2 = block.prevBlockHash.equalsIgnoreCase(blockchain.get(blockchain.size() - 1).getHash());
+        boolean condition3 = ProofOfWork.validatePow(block, DIFF);
+        //Should Check If there are multiple coinbase but since the txdataset has multiple coinbase transactions we didn't
+        return condition1 && condition2 && condition3;
     }
 
     public static void foundABlock(Block block, int hashCode) {
-        if(currentWorkingThreads.get(hashCode)){
+        if (currentWorkingThreads.get(hashCode)) {
             //TODO: BROADCAST CURRENT BLOCK FOUND
             updatePendingPool(block);
             blockchain.add(block);
+            currentWorkingThreads.put(hashCode,false);
             System.out.println(block);
-            if(pendingTxPool.size() > BLOCK_SIZE && !isMining()){
+            if (pendingTxPool.size() > BLOCK_SIZE && !isMining()) {
                 startANewMiningThread();
             }
         }
     }
 
-    public static void startANewMiningThread(){
+    public static void startANewMiningThread() {
         Thread miner = new MinerThread();
         miner.start();
         currentWorkingThreads.put(miner.hashCode(), true);
