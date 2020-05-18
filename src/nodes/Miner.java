@@ -3,6 +3,8 @@ package nodes;
 import blockchain.*;
 import network.Broadcaster;
 import network.Listener;
+import network.NetworkInfo;
+import network.NodeInfo;
 import security_utils.MerkleTree;
 
 import java.io.*;
@@ -14,16 +16,16 @@ import java.security.NoSuchProviderException;
 import java.util.*;
 
 public class Miner {
-
-    public volatile static HashMap<String, Transaction> pendingTxPool;
-    //private static HashMap<String, blockchain.Transaction> transactionsHistory;
+    public static Broadcaster broadcaster;
+    public volatile static LinkedHashMap<String, Transaction> pendingTxPool;
     public volatile static List<Block> blockchain;
+    public volatile static ArrayList<Block> staleBlocks;
     public volatile static HashSet<String> uTxoPool;
-    public static final int BLOCK_SIZE = 200;
+    public static int nodeNumber;
+    public static final int BLOCK_SIZE = 50;
     public static final int BLOCK_REWARD = 5;
-    public static final int DIFF = 1;
+    public static final int DIFF = 20;
     public static int WORKING_MODE = 0; //0 For POW | 1 For BFT
-    public static boolean miningBlock = false;
     public static Account account;
     public static HashMap<Integer, Boolean> currentWorkingThreads;
     public static int doubleSpending = 0;
@@ -32,12 +34,12 @@ public class Miner {
     public static int blockss=0;
 
     static {
-        pendingTxPool = new HashMap<>();
-        //transactionsHistory = new HashMap<>();
+        pendingTxPool = new LinkedHashMap<>();
         blockchain = new ArrayList<>();
         blockchain.add(Block.getGenesisBlock());
         uTxoPool = new HashSet<>();
         currentWorkingThreads = new HashMap<>();
+        staleBlocks = new ArrayList<>();
         try {
             account = new Account();
         } catch (InvalidAlgorithmParameterException e) {
@@ -50,15 +52,16 @@ public class Miner {
     }
 
     public static void main(String[] args) throws IOException {
+        Scanner sc = new Scanner(System.in);
+        nodeNumber = sc.nextInt();
+        broadcaster = new Broadcaster(NetworkInfo.NODE_INFOS[nodeNumber]);
+        broadcaster.connectWithPeers();
         beginListening();
-        /*while(true){
-
-        }*/
     }
 
     public static void beginListening() throws IOException {
         // server is listening
-        ServerSocket ss = new ServerSocket(5000);
+        ServerSocket ss = new ServerSocket(NetworkInfo.NODE_INFOS[nodeNumber].port);
 
         // running infinite loop for getting
         // client request
@@ -91,6 +94,7 @@ public class Miner {
 
     public static synchronized void receivedNewTransaction(Transaction transaction) {
         // TODO: verify transaction before adding to pending transactions
+        System.out.println("TRAN REC: " + transaction);
         boolean valid = false;
         boolean firstSpending = true;
         valid = verifyTransaction(transaction);
@@ -218,16 +222,21 @@ public class Miner {
     }
 
     public static synchronized void receivedNewBlock(Block block) {
+        System.out.println("I RECEIVED A BLOCK!");
         boolean valid = validateBlock(block);
-        if (valid) {
+        if (valid && isMining()) {
             invalidateAllMining();
             updatePendingPool(block);
             blockchain.add(block);
+            System.out.println("BLOCK REC VALID: " + block);
             if (pendingTxPool.size() > BLOCK_SIZE && !isMining()) {
                 startANewMiningThread();
             }
         }
-        // TODO: MAYBE A RACE CONDITION
+        if(valid){
+            System.out.println("BLOCK REC STALE: " + block);
+            staleBlocks.add(block);
+        }
     }
 
     private static void updatePendingPool(Block block) {
@@ -244,18 +253,19 @@ public class Miner {
 
     private static boolean validateBlock(Block block) {
         boolean condition1 = MerkleTree.getMerkleTreeRoot(block.transactions).equalsIgnoreCase(block.merkleRootHash);
-        boolean condition2 = block.prevBlockHash.equalsIgnoreCase(blockchain.get(blockchain.size() - 1).getHash());
-        boolean condition3 = ProofOfWork.validatePow(block, DIFF);
+        boolean condition2 = ProofOfWork.validatePow(block, DIFF);
+        boolean condition3 = block.prevBlockHash.equalsIgnoreCase(blockchain.get(blockchain.size() - 1).getHash());
         //Should Check If there are multiple coinbase but since the txdataset has multiple coinbase transactions we didn't
         return condition1 && condition2 && condition3;
     }
 
     public static void foundABlock(Block block, int hashCode) {
         if (currentWorkingThreads.get(hashCode)) {
-            //TODO: BROADCAST CURRENT BLOCK FOUND
+            currentWorkingThreads.put(hashCode,false);
             blockchain.add(block);
             updatePendingPool(block);
-            currentWorkingThreads.put(hashCode,false);
+            broadcaster.broadcast(block);
+            System.out.println("BLOCK FOUND: " + block);
             if (pendingTxPool.size() > BLOCK_SIZE && !isMining()) {
                 startANewMiningThread();
             }
@@ -264,7 +274,7 @@ public class Miner {
 
     public static void startANewMiningThread() {
         Thread miner = new MinerThread();
-        miner.start();
         currentWorkingThreads.put(miner.hashCode(), true);
+        miner.start();
     }
 }

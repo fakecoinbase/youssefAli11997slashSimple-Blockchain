@@ -11,31 +11,33 @@ public class Transaction implements Serializable {
     public boolean witnessFlag;
     public int inputCounter;
     public Input[] inputs;
-    public Sign.SignatureData [] signatures;
+    //public Sign.SignatureData [] signatures;
+    public SerializableSignature [] signatures;
     public BigInteger publicKey;
     public int outputCounter;
     public Output[] outputs;
-    public Sign.SignatureData outputSignature;
+    public SerializableSignature outputSignature;
+    //public Sign.SignatureData outputSignature;
     public int index;
     public Transaction(boolean witnessFlag, int inputCounter, Sign.SignatureData [] signatures, Input[] inputs, BigInteger publicKey, int outputCounter, Output[] outputs, Sign.SignatureData outputSignature) {
         this.witnessFlag = witnessFlag;
         this.inputCounter = inputCounter;
         this.inputs = inputs;
-        this.signatures = signatures;
+        this.signatures = SerializableSignature.toSerializable(signatures);
         this.publicKey = publicKey;
         this.outputCounter = outputCounter;
         this.outputs = outputs;
-        this.outputSignature = outputSignature;
+        this.outputSignature = SerializableSignature.toSerializable(outputSignature);
     }
     public Transaction(boolean witnessFlag, int inputCounter, Sign.SignatureData [] signatures, Input[] inputs, BigInteger publicKey, int outputCounter, Output[] outputs, Sign.SignatureData outputSignature,int index) {
         this.witnessFlag = witnessFlag;
         this.inputCounter = inputCounter;
         this.inputs = inputs;
-        this.signatures = signatures;
+        this.signatures = SerializableSignature.toSerializable(signatures);
         this.publicKey = publicKey;
         this.outputCounter = outputCounter;
         this.outputs = outputs;
-        this.outputSignature = outputSignature;
+        this.outputSignature = SerializableSignature.toSerializable(outputSignature);
         this.index=index;
     }
     @Override
@@ -44,11 +46,11 @@ public class Transaction implements Serializable {
                 "witnessFlag=" + witnessFlag +
                 ", inputCounter=" + inputCounter +
                 ", inputs=" + Arrays.toString(inputs) +
-                ", signatures=" + Arrays.hashCode(signatures) +
+                ", signatures=" + Arrays.hashCode(SerializableSignature.getSignature(signatures)) +
                 ", publicKey=" + publicKey +
                 ", outputCounter=" + outputCounter +
                 ", outputs=" + Arrays.toString(outputs) +
-                ", outputSignature=" + outputSignature.hashCode() +
+                ", outputSignature=" + SerializableSignature.getSignature(outputSignature).hashCode() +
                 '}';
     }
     public void setIndex(int inde){

@@ -60,6 +60,10 @@ public class Account {
         return vaild;
     }
 
+    public boolean validateSignature(String message , SerializableSignature signature, boolean hashed){
+        return validateSignature(message, SerializableSignature.getSignature(signature), hashed);
+    }
+
     public static boolean validateSignature(String message, BigInteger fullPubKey , Sign.SignatureData signature, boolean hashed){
         boolean vaild = false;
         BigInteger pubKeyRecovered;
@@ -76,6 +80,10 @@ public class Account {
             e.printStackTrace();
         }
         return vaild;
+    }
+
+    public static boolean validateSignature(String message, BigInteger fullPubKey , SerializableSignature signature, boolean hashed){
+        return validateSignature(message, fullPubKey, SerializableSignature.getSignature(signature), hashed);
     }
 
     public static boolean validateAddress(BigInteger fullPubKey, String address){

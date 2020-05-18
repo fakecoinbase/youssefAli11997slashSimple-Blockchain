@@ -60,6 +60,7 @@ public class Broadcaster {
     }
     public static void addNewOutputStream(DataOutputStream dos) {
         outputStreams.add(dos);
+        System.out.println(outputStreams.size());
     }
 
     public void broadcast(String msg) {
@@ -86,6 +87,7 @@ public class Broadcaster {
     public void broadcast(Block block) {
         for(DataOutputStream outputStream : outputStreams) {
             try {
+                System.out.println("BROADCASTING!!!!");
                 ObjectOutputStream os = new ObjectOutputStream(outputStream);
                 os.writeObject(block);
             } catch (IOException e) {

@@ -14,6 +14,7 @@ public class Listener extends Thread {
     private Socket socket = null;
     private DataInputStream dis =  null;
     private DataOutputStream dos = null;
+    private boolean receiveCondition;
 
 
     private final Object LOCK = new Object();
@@ -22,6 +23,7 @@ public class Listener extends Thread {
         this.socket = socket;
         this.dis = in;
         this.dos = out;
+        this.receiveCondition = true;
     }
 
     public void receive() {
@@ -34,7 +36,7 @@ public class Listener extends Thread {
                 Transaction transaction = (Transaction) object;
                 Miner.receivedNewTransaction(transaction);
 
-                System.out.println(transaction.toString());
+                //System.out.println(transaction.toString());
             }
             else if(object instanceof Block) {
                 Block block = (Block) object;
@@ -42,16 +44,14 @@ public class Listener extends Thread {
             }
         }
         catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+            this.receiveCondition = false;
         }
     }
 
     @Override
     public void run() {
-        String received;
-
-        //while(true) {
+        while(receiveCondition) {
             receive();
-        //}
+        }
     }
 }
