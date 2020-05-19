@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Scanner;
 
 public class DatasetParser {
-    public static String filePath = "/home/mashaal/Desktop/Simple Blockchain/txdataset_v2_minimal.txt";
+    public static String filePath = "txdataset_v2_minimal.txt";
     public static ArrayList<Account> accounts;
     //public static ArrayList<Transaction> transactions;
     public static HashMap<Integer, Transaction> transactions;

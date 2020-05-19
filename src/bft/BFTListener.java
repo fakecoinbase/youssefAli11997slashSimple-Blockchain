@@ -17,9 +17,7 @@ public class BFTListener extends Thread {
     private Socket socket = null;
     private DataInputStream dis =  null;
     private DataOutputStream dos = null;
-
-
-    private final Object LOCK = new Object();
+    private boolean receiveCondition;
 
     public BFTListener(Socket socket, DataInputStream in, DataOutputStream out) {
         this.socket = socket;
@@ -45,28 +43,32 @@ public class BFTListener extends Thread {
             }
             else if(object instanceof PrePrepare) {
                 PrePrepare prePrepare = (PrePrepare) object;
+                System.out.println("Received pre-prepare message");
+                System.out.println(prePrepare);
                 Validator.receivedPrePrepareMessage(prePrepare);
             }
             else if(object instanceof Prepare) {
                 Prepare prepare = (Prepare) object;
+                System.out.println("Received prepare message");
+                System.out.println(prepare);
                 Validator.receivedPrepareMessage(prepare);
             }
             else if(object instanceof Commit) {
                 Commit commit = (Commit) object;
+                System.out.println("Received commit message");
+                System.out.println(commit);
                 Validator.receivedCommitMessage(commit);
             }
         }
         catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+            this.receiveCondition = false;
         }
     }
 
     @Override
     public void run() {
-        String received;
-
-        //while(true) {
+        while(receiveCondition) {
             receive();
-        //}
+        }
     }
 }

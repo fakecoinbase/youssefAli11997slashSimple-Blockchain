@@ -1,0 +1,61 @@
+intput 0  value:
+1	intput:0	value:15.24179	output:1
+2	intput:0	value:0.39931536	output:2
+3	intput:0	value:66.67151	output:3
+4	intput:0	value:27.057499	output:4
+5	intput:0	value:68.438896	output:5
+6	intput:0	value:89.09998	output:6
+7	intput:0	value:52.794075	output:7
+8	intput:0	value:12.051016	output:8
+9	intput:0	value:8.3324795	output:9
+10	intput:0	value:56.629974	output:10
+11	intput:0	value:65.54022	output:11
+12	intput:0	value:56.163067	output:12
+13	intput:0	value:34.098053	output:13
+14	intput:0	value:50.924282	output:14
+15	intput:0	value:73.28714	output:15
+16	intput:0	value:50.78119	output:16
+17	intput:0	value:68.564575	output:17
+18	intput:0	value:51.228123	output:18
+19	intput:0	value:57.065582	output:19
+20	intput:0	value:54.321278	output:20
+21	intput:0	value:89.76364	output:21
+22	intput:0	value:40.830696	output:22
+23	intput:0	value:23.93303	output:23
+24	intput:0	value:22.243755	output:24
+25	intput:0	value:37.27791	output:25
+26	intput:0	value:91.05823	output:26
+27	intput:0	value:89.3266	output:27
+28	intput:0	value:2.8311431	output:28
+29	intput:0	value:37.76506	output:29
+30	intput:0	value:14.531893	output:30
+31	intput:0	value:33.813423	output:31
+32	intput:0	value:40.70232	output:32
+33	intput:0	value:41.298527	output:33
+34	intput:0	value:26.160944	output:34
+35	intput:0	value:68.57059	output:35
+36	intput:0	value:85.00202	output:36
+37	intput:0	value:83.33657	output:37
+38	intput:0	value:89.43426	output:38
+39	intput:0	value:25.539333	output:39
+40	intput:0	value:88.305725	output:40
+41	intput:0	value:16.50095	output:41
+42	intput:0	value:28.157116	output:42
+43	intput:0	value:69.241104	output:43
+44	intput:0	value:4.2431116	output:44
+45	intput:0	value:61.941486	output:45
+46	intput:0	value:6.6593647	output:46
+47	intput:0	value:47.822624	output:47
+48	intput:0	value:99.644424	output:48
+49	intput:0	value:79.121956	output:49
+50	intput:41	previoustx:41	outputindex:1	value1:0.6444474	output1:47	value2:10.64253	output2:46	value3:5.213972	output3:41
+51	intput:49	previoustx:49	outputindex:1	value1:17.170021	output1:47	value2:35.551216	output2:44	value3:26.400719	output3:49
+52	intput:17	previoustx:17	outputindex:1	value1:37.74857	output1:43	value2:16.304852	output2:44	value3:14.511154	output3:17
+53	intput:37	previoustx:37	outputindex:1	value1:77.661354	output1:7	value2:2.155718	output2:41	value3:3.5194986	output3:37
+54	intput:44	previoustx:52	outputindex:2	value1:14.469084	output1:47	value2:0.13597625	output2:37	value3:1.6997914	output3:44
+55	intput:8	previoustx:8	outputindex:1	value1:9.220263	output1:38	value2:0.08562678	output2:39	value3:2.7451265	output3:8
+56	intput:1	previoustx:1	outputindex:1	value1:1.6960077	output1:39	value2:7.1109223	output2:7	value3:6.4348598	output3:1
+57	intput:49	previoustx:51	outputindex:3	value1:24.488062	output1:4	value2:0.4947625	output2:6	value3:1.4178942	output3:49
+58	intput:22	previoustx:22	outputindex:1	value1:28.782665	output1:14	value2:2.8425927	output2:39	value3:9.205439	output3:22
+59	intput:34	previoustx:34	outputindex:1	value1:13.85489	output1:10	value2:0.06881238	output2:27	value3:12.237242	output3:34
+60	intput:9	previoustx:9	outputindex:1	value1:0.16290814	output1:18	value2:0.18525945	output2:16	value3:7.9843116	output3:9

@@ -11,6 +11,7 @@ import network.NodeInfo;
 import nodes.Miner;
 import org.web3j.crypto.Sign;
 import security_utils.MerkleTree;
+import testing.DatasetParser;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -44,9 +45,10 @@ public class Validator {
 
     public static BFTBroadcaster bftBroadcaster;
     public static Block currentWorkedOnBlock;
+    public static int nodeNumber;
 
-    public static List<Prepare> prepareMessagesPool;
-    public static List<Commit> commitMessagesPool;
+    public static List<Prepare> prepareMessagesPool = new ArrayList<>();
+    public static List<Commit> commitMessagesPool = new ArrayList<>();
 
     static {
         pendingTxPool = new HashMap<>();
@@ -71,6 +73,7 @@ public class Validator {
     }
 
     public static void newRoundPhase() {
+        System.out.println("In new round phase");
 
         prepareMessagesPool.clear();
         commitMessagesPool.clear();
@@ -83,6 +86,7 @@ public class Validator {
         NodeInfo currentProposerInfo = NetworkInfo.NODE_INFOS[currentProposer];
         if(currentProposerInfo.ipAddress.equals(myInfo.ipAddress)
         && currentProposerInfo.port == myInfo.port) {
+            System.out.println("I am the proposer");
             // proposer collects transactions from pool
             // create a new block and broadcast it
             collectPendingTransactions();
@@ -91,6 +95,7 @@ public class Validator {
             state = Utils.State.PRE_PREPARED;
         }
         // else wait for the pre-prepare message
+        else System.out.println("I am a validator");
 
     }
 
@@ -100,8 +105,10 @@ public class Validator {
         // enter the pre-prepared state
         state = Utils.State.PRE_PREPARED;
 
+        System.out.println("validating pre-prepare...");
         // verify the proposal (the sender and the block itself)
         if(validatePrePrepare(prePrepare)) {
+            System.out.println("valid pre-prepare");
             currentWorkedOnBlock = prePrepare.block;
             Sign.SignatureData signature = account.signMessage(currentWorkedOnBlock.getHash(), false);
             bftBroadcaster.broadcast(new Prepare(currentWorkedOnBlock.getHash(), account.publicKey, signature));
@@ -111,10 +118,13 @@ public class Validator {
     public static void receivedPrepareMessage(Prepare prepare) {
         if(state != Utils.State.PRE_PREPARED) return;
 
+        System.out.println("validating prepare...");
         if(validatePrepare(prepare)) {
+            System.out.println("valid prepare");
             prepareMessagesPool.add(prepare);
             // wait for 2*(#nodes) / 3 valid prepare messages
             if(prepareMessagesPool.size() >= 2 * NUMBER_OF_VALIDATORS / 3) {
+                System.out.println("Received enough prepare messages");
                 // then enter prepared state
                 state = Utils.State.PREPARED;
                 Sign.SignatureData signature = account.signMessage(currentWorkedOnBlock.getHash(), false);
@@ -126,15 +136,20 @@ public class Validator {
     public static void receivedCommitMessage(Commit commit) {
         if(state != Utils.State.PREPARED) return;
 
+        System.out.println("validating commit...");
         if(validateCommit(commit)) {
+            System.out.println("valid commit");
             commitMessagesPool.add(commit);
             // wait for 2*(#nodes) / 3 valid commit messages
             if(commitMessagesPool.size() >= 2 * NUMBER_OF_VALIDATORS / 3) {
+                System.out.println("Received enough commit messages");
                 // then enter committed state
                 state = Utils.State.COMMITTED;
+                updatePendingPool(currentWorkedOnBlock);
                 blockchain.add(currentWorkedOnBlock);
                 // TODO: validators append the received valid commit messages into the block
                 state = Utils.State.FINAL_COMMITED;
+                System.out.println("Now we are to start a new round");
                 newRoundPhase();
             }
         }
@@ -142,33 +157,37 @@ public class Validator {
 
     public static void collectPendingTransactions() {
         ArrayList<Transaction> toBeIncludedInBlock = new ArrayList<>();
-        for(Map.Entry<String, Transaction> entry : Miner.pendingTxPool.entrySet()){
+        for(Map.Entry<String, Transaction> entry : pendingTxPool.entrySet()){
             toBeIncludedInBlock.add(entry.getValue());
         }
         //Transaction coinBase = calculateCoinBase(toBeIncludedInBlock);
         //toBeIncludedInBlock.add(0, coinBase);
         String root = MerkleTree.getMerkleTreeRoot(toBeIncludedInBlock);
-        Block prev = Miner.getNewestBlock();
+        Block prev = getNewestBlock();
         Block toBeAdded = new Block(prev.getHash(), root, toBeIncludedInBlock, prev.height+1);
         formedABlock(toBeAdded);
     }
 
     public static void beginListening() throws IOException {
         // server is listening
-        ServerSocket ss = new ServerSocket(5000);
+        ServerSocket ss = new ServerSocket(myInfo.port);
 
         // running infinite loop for getting
         // client request
         while (true) {
+            System.out.println("size: " + bftBroadcaster.connectedPeers);
+            if(bftBroadcaster.connectedPeers >= NetworkInfo.NODE_INFOS.length-1)
+                break;
+
             Socket socket = null;
 
             try {
                 // socket object to receive incoming client requests
                 socket = ss.accept();
-                Broadcaster.addNewSocket(socket);
-                Broadcaster.addNewOutputStream(new DataOutputStream(socket.getOutputStream()));
+                bftBroadcaster.connectWithPeers();
 
                 System.out.println("A new peer is connected : " + socket);
+                bftBroadcaster.connectedPeers++;
 
                 // obtaining input and out streams
                 DataInputStream dis = new DataInputStream(socket.getInputStream());
@@ -278,12 +297,7 @@ public class Validator {
             //validate Value Sent
             double totalInput = 0;
             for (int i = 0; i < transaction.inputs.length; i++) {
-                Transaction prevTx = null;
-                do {
-                    prevTx = getTransaction(transaction.inputs[i].previousTransactionHash);
-                    if(prevTx==null)System.out.println(transaction.index+" 2");
-
-                } while (prevTx == null);
+                Transaction prevTx = getTransaction(transaction.inputs[i].previousTransactionHash);
                 Output referenced = prevTx.outputs[transaction.inputs[i].outputIndex];
                 totalInput += referenced.value;
             }
@@ -312,6 +326,11 @@ public class Validator {
                 // System.out.println(previousTransactionHash + " not found");
             }
         }
+
+        // search pending
+        if (pendingTxPool.containsKey(previousTransactionHash))
+            return pendingTxPool.get(previousTransactionHash);
+
         return null;
     }
 
@@ -357,8 +376,41 @@ public class Validator {
     public static void formedABlock(Block block) {
         Sign.SignatureData signature = account.signMessage(block.toString(), false);
         bftBroadcaster.broadcast(new PrePrepare(block, account.publicKey, signature));
-        updatePendingPool(block);
-        blockchain.add(block);
+        //updatePendingPool(block);
+        //blockchain.add(block);
         System.out.println(block);
+    }
+
+    public static Block getNewestBlock() {
+        if(blockchain.size() == 0) return null;
+        return blockchain.get(blockchain.size()-1);
+    }
+
+    public static void main(String[] args) throws IOException {
+        Scanner sc = new Scanner(System.in);
+        nodeNumber = sc.nextInt();
+        myInfo = NetworkInfo.NODE_INFOS[nodeNumber];
+        bftBroadcaster = new BFTBroadcaster(NetworkInfo.NODE_INFOS[nodeNumber]);
+        bftBroadcaster.connectWithPeers();
+        beginListening();
+        try {
+            // initialize with some transactions
+            HashMap<Integer, Transaction> txList = DatasetParser.getTransactions();
+            ArrayList<Integer> keys =  new ArrayList<>(txList.keySet());
+            Collections.sort(keys);
+            for(Integer key: keys) {
+                //System.out.println(key);
+                receivedNewTransaction(txList.get(key));
+            }
+
+            //while(true)
+                newRoundPhase();
+        } catch (InvalidAlgorithmParameterException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (NoSuchProviderException e) {
+            e.printStackTrace();
+        }
     }
 }

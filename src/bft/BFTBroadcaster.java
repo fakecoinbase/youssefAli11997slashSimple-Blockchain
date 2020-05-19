@@ -15,9 +15,10 @@ import java.net.Socket;
 import java.util.*;
 
 public class BFTBroadcaster {
-    private static Set<Socket> sockets = new HashSet<>();
+    public Set<Socket> sockets = new HashSet<>();
     private Scanner input = new Scanner(System.in);
     private static List<DataOutputStream> outputStreams = new ArrayList<>();
+    public int connectedPeers = 0;
 
     private NodeInfo myInfo;
 
@@ -48,6 +49,7 @@ public class BFTBroadcaster {
             try {
                 Socket socket = new Socket(nodeInfo.ipAddress, nodeInfo.port);
                 System.out.println("Connected");
+                connectedPeers++;
 
                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 
@@ -58,13 +60,6 @@ public class BFTBroadcaster {
                 u.printStackTrace();
             }
         }
-    }
-
-    public static void addNewSocket(Socket socket) {
-        sockets.add(socket);
-    }
-    public static void addNewOutputStream(DataOutputStream dos) {
-        outputStreams.add(dos);
     }
 
     public void broadcast(String msg) {
