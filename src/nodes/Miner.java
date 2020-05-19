@@ -6,6 +6,7 @@ import network.Listener;
 import network.NetworkInfo;
 import network.NodeInfo;
 import security_utils.MerkleTree;
+import testing.PrintThread;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -19,12 +20,12 @@ public class Miner {
     public static Broadcaster broadcaster;
     public volatile static LinkedHashMap<String, Transaction> pendingTxPool;
     public volatile static Vector<Vector<Block>> blockchain;
-    public volatile static ArrayList<ArrayList<Block>> staleBlocks;
+    //public volatile static ArrayList<ArrayList<Block>> staleBlocks;
     public volatile static HashSet<String> uTxoPool;
     public static int nodeNumber;
-    public static final int BLOCK_SIZE = 50;
+    public static final int BLOCK_SIZE = 20;
     public static final int BLOCK_REWARD = 5;
-    public static final int DIFF = 15;
+    public static final int DIFF = 3;
     public static int WORKING_MODE = 0; //0 For POW | 1 For BFT
     public static Account account;
     public static HashMap<Integer, Boolean> currentWorkingThreads;
@@ -41,7 +42,7 @@ public class Miner {
         blockchain.add(firstList);
         uTxoPool = new HashSet<>();
         currentWorkingThreads = new HashMap<>();
-        staleBlocks = new ArrayList<>();
+        //staleBlocks = new ArrayList<>();
         try {
             account = new Account();
         } catch (InvalidAlgorithmParameterException e) {
@@ -58,6 +59,8 @@ public class Miner {
         nodeNumber = sc.nextInt();
         broadcaster = new Broadcaster(NetworkInfo.NODE_INFOS[nodeNumber]);
         broadcaster.connectWithPeers();
+        Thread testing = new PrintThread();
+        testing.start();
         beginListening();
     }
 
