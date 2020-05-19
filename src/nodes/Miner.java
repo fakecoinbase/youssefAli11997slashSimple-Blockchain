@@ -18,7 +18,7 @@ import java.util.*;
 public class Miner {
     public static Broadcaster broadcaster;
     public volatile static LinkedHashMap<String, Transaction> pendingTxPool;
-    public volatile static List<List<Block>> blockchain;
+    public volatile static Vector<Vector<Block>> blockchain;
     public volatile static ArrayList<ArrayList<Block>> staleBlocks;
     public volatile static HashSet<String> uTxoPool;
     public static int nodeNumber;
@@ -35,8 +35,8 @@ public class Miner {
 
     static {
         pendingTxPool = new LinkedHashMap<>();
-        blockchain = new ArrayList<>();
-        List<Block> firstList = new ArrayList<>();
+        blockchain = new Vector<>();
+        Vector<Block> firstList = new Vector<>();
         firstList.add(Block.getGenesisBlock());
         blockchain.add(firstList);
         uTxoPool = new HashSet<>();
@@ -95,7 +95,7 @@ public class Miner {
 
     public static synchronized void receivedNewTransaction(Transaction transaction) {
         // TODO: verify transaction before adding to pending transactions
-        System.out.println("TRAN REC: " + transaction);
+        //System.out.println("TRAN REC: " + transaction);
         boolean valid = false;
         boolean firstSpending = true;
         valid = verifyTransaction(transaction);
@@ -210,8 +210,9 @@ public class Miner {
     public static synchronized Transaction getTransaction(String previousTransactionHash) {
         // search previous blocks
         for (int i = 0 ;i<blockchain.size();i++) {
-            for(int j=0;j<blockchain.get(i).size();j++) {
-                Block bl = blockchain.get(i).get(j);
+            Vector<Block> l = blockchain.get(i);
+            for(int j=0;j<l.size();j++) {
+                Block bl = l.get(j);
                 if (bl.contains(previousTransactionHash))
                     return bl.get(previousTransactionHash);
             }
@@ -235,15 +236,16 @@ public class Miner {
             }
             updatePendingPool(block);
             for(int i=0;i<blockchain.size();i++){
-                if(blockchain.size()>=height
-                &&blockchain.get(i).get(height-1).getHash().equalsIgnoreCase(block.prevBlockHash)){
-                    if(blockchain.get(i).size()==height){
+                Vector<Block> l = blockchain.get(i);
+                if(l.size()>=height
+                &&l.get(height-1).getHash().equalsIgnoreCase(block.prevBlockHash)){
+                    if(l.size()==height){
                         blockchain.get(i).add(block);
                         System.out.println("added received leaf Block "+block);
                     }else{
-                        List<Block> l = blockchain.get(i).subList(0,height);
-                        l.add(block);
-                        blockchain.add(l);
+                        Vector<Block> ll = new Vector<>(l.subList(0,height));
+                        ll.add(block);
+                        blockchain.add(ll);
                         System.out.println("added received intermediate Block "+block);
                     }
                     break;
@@ -272,8 +274,9 @@ public class Miner {
         boolean condition2 = ProofOfWork.validatePow(block, DIFF);
         boolean condition3 = false;
         for(int i=0;i<blockchain.size();i++){
-            if(blockchain.get(i).size()>=height
-            && blockchain.get(i).get(height-1).getHash().equalsIgnoreCase(block.prevBlockHash)){
+            Vector<Block> l = blockchain.get(i);
+            if(l.size()>=height
+            && l.get(height-1).getHash().equalsIgnoreCase(block.prevBlockHash)){
                 condition3=true;
                 break;
             }
@@ -295,8 +298,9 @@ public class Miner {
             currentWorkingThreads.put(hashCode,false);
             int height = block.height;
             for(int i=0;i<blockchain.size();i++){
-                if(blockchain.get(i).size()>=height &&
-                        blockchain.get(i).get(height-1).getHash().equalsIgnoreCase(block.prevBlockHash)){
+                Vector<Block> l = blockchain.get(i);
+                if(l.size()>=height &&
+                        l.get(height-1).getHash().equalsIgnoreCase(block.prevBlockHash)){
                     blockchain.get(i).add(block);
                     break;
                 }
@@ -319,9 +323,10 @@ public class Miner {
     public static Block getNewestBlock() {
         Block res = null;
         for(int i=0;i<blockchain.size();i++){
-            int size = blockchain.get(i).size() ;
+            Vector<Block> l = blockchain.get(i);
+            int size = l.size() ;
             if(res==null || size>res.height+1){
-                res=blockchain.get(i).get(size-1);
+                res=l.get(size-1);
             }
         }
         return res;
