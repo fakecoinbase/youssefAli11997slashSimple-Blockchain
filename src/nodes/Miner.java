@@ -18,30 +18,30 @@ import java.util.*;
 
 public class Miner {
     public static Broadcaster broadcaster;
-    public volatile static LinkedHashMap<String, Transaction> pendingTxPool;
+    public volatile static Map<String, Transaction> pendingTxPool;
     public volatile static Vector<Vector<Block>> blockchain;
     //public volatile static ArrayList<ArrayList<Block>> staleBlocks;
-    public volatile static HashSet<String> uTxoPool;
+    public volatile static Set<String> uTxoPool;
     public static int nodeNumber;
     public static final int BLOCK_SIZE = 20;
     public static final int BLOCK_REWARD = 5;
-    public static final int DIFF = 3;
+    public static final int DIFF = 2;
     public static int WORKING_MODE = 0; //0 For POW | 1 For BFT
     public static Account account;
-    public static HashMap<Integer, Boolean> currentWorkingThreads;
+    public static Hashtable<Integer, Boolean> currentWorkingThreads;
     public static int doubleSpending = 0;
     public static int notValid = 0;
     public static int validd=0;
     public static int blockss=0;
 
     static {
-        pendingTxPool = new LinkedHashMap<>();
+        pendingTxPool = Collections.synchronizedMap(new LinkedHashMap<>());
         blockchain = new Vector<>();
         Vector<Block> firstList = new Vector<>();
         firstList.add(Block.getGenesisBlock());
         blockchain.add(firstList);
-        uTxoPool = new HashSet<>();
-        currentWorkingThreads = new HashMap<>();
+        uTxoPool = Collections.synchronizedSet(new HashSet<>());
+        currentWorkingThreads = new Hashtable<>();
         //staleBlocks = new ArrayList<>();
         try {
             account = new Account();
