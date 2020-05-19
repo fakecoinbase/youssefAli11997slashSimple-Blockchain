@@ -20,13 +20,13 @@ public class Block implements Serializable {
     public int nonce;
     public int height;
     public List<Transaction> transactions;
-    public HashMap<String, Transaction> transactionMap;
+    public Hashtable<String, Transaction> transactionMap;
 
     public Block(Block bl){
         this.prevBlockHash = bl.prevBlockHash;
         this.merkleRootHash = bl.merkleRootHash;
         this.transactions = bl.transactions;
-        this.transactionMap = new HashMap<>();
+        this.transactionMap = new Hashtable<>();
         this.height= bl.height;
         fillMap();
         this.timestamp = bl.timestamp;
@@ -38,7 +38,7 @@ public class Block implements Serializable {
         this.prevBlockHash = prevBlockHash;
         this.merkleRootHash = merkleRootHash;
         this.transactions = transactions;
-        this.transactionMap = new HashMap<>();
+        this.transactionMap = new Hashtable<>();
         fillMap();
         this.nonce = 0;
     }
@@ -48,7 +48,7 @@ public class Block implements Serializable {
         this.height = height;
         this.merkleRootHash = merkleRootHash;
         this.transactions = transactions;
-        this.transactionMap = new HashMap<>();
+        this.transactionMap = new Hashtable<>();
         fillMap();
         this.timestamp = timestamp;
         this.nonce = 0;
