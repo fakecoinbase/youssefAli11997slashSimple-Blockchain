@@ -17,18 +17,25 @@ public class BFTListener extends Thread {
     private Socket socket = null;
     private DataInputStream dis =  null;
     private DataOutputStream dos = null;
+    private ObjectInputStream inputObjectStream;
     private boolean receiveCondition;
 
     public BFTListener(Socket socket, DataInputStream in, DataOutputStream out) {
         this.socket = socket;
         this.dis = in;
+        try {
+            this.inputObjectStream = new ObjectInputStream(dis);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         this.dos = out;
+        this.receiveCondition = true;
     }
 
     public void receive() {
         ObjectInputStream in = null;
         try {
-            in = new ObjectInputStream(dis);
+            in = inputObjectStream;
             Object object = in.readObject();
 
             if(object instanceof Transaction) {

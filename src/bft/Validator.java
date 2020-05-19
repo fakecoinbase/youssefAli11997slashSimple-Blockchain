@@ -391,8 +391,11 @@ public class Validator {
         nodeNumber = sc.nextInt();
         myInfo = NetworkInfo.NODE_INFOS[nodeNumber];
         bftBroadcaster = new BFTBroadcaster(NetworkInfo.NODE_INFOS[nodeNumber]);
+        System.out.println("Connect to peers!");
         bftBroadcaster.connectWithPeers();
+        System.out.println("Begin Listening!");
         beginListening();
+        System.out.println("Out of begin listening!!");
         try {
             // initialize with some transactions
             HashMap<Integer, Transaction> txList = DatasetParser.getTransactions();

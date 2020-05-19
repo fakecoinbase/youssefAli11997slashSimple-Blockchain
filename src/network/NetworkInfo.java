@@ -3,7 +3,7 @@ package network;
 public class NetworkInfo {
 
     public static final NodeInfo[] NODE_INFOS = {
-            new NodeInfo("156.194.27.142", 5000),
+            new NodeInfo("127.0.0.1", 5000),
             new NodeInfo("127.0.0.1", 5001),
             new NodeInfo("127.0.0.1", 5002)
     };
