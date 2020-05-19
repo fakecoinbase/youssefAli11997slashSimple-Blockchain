@@ -45,6 +45,7 @@ public class Listener extends Thread {
         }
         catch (IOException | ClassNotFoundException e) {
             this.receiveCondition = false;
+            e.printStackTrace();
         }
     }
 

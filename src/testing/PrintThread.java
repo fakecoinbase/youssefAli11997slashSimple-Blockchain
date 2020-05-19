@@ -9,7 +9,7 @@ public class PrintThread extends Thread {
     @Override
     public void run() {
         try {
-            sleep(600000);
+            sleep(120000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
