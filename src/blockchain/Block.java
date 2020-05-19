@@ -18,6 +18,7 @@ public class Block implements Serializable {
     public String merkleRootHash;
     public long timestamp = new Date().getTime();
     public int nonce;
+    public int height;
     public List<Transaction> transactions;
     public HashMap<String, Transaction> transactionMap;
 
@@ -26,12 +27,14 @@ public class Block implements Serializable {
         this.merkleRootHash = bl.merkleRootHash;
         this.transactions = bl.transactions;
         this.transactionMap = new HashMap<>();
+        this.height= bl.height;
         fillMap();
         this.timestamp = bl.timestamp;
         this.nonce = bl.nonce;
     }
 
-    public Block(String prevBlockHash, String merkleRootHash, List<Transaction> transactions) {
+    public Block(String prevBlockHash, String merkleRootHash, List<Transaction> transactions,int height) {
+        this.height = height;
         this.prevBlockHash = prevBlockHash;
         this.merkleRootHash = merkleRootHash;
         this.transactions = transactions;
@@ -40,8 +43,9 @@ public class Block implements Serializable {
         this.nonce = 0;
     }
 
-    public Block(String prevBlockHash, String merkleRootHash, List<Transaction> transactions, long timestamp) {
+    public Block(String prevBlockHash, String merkleRootHash, List<Transaction> transactions, long timestamp,int height) {
         this.prevBlockHash = prevBlockHash;
+        this.height = height;
         this.merkleRootHash = merkleRootHash;
         this.transactions = transactions;
         this.transactionMap = new HashMap<>();
@@ -77,7 +81,7 @@ public class Block implements Serializable {
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        Block genesis = new Block(prevHash, MerkleTree.getMerkleTreeRoot(txList), txList, date.getTime());
+        Block genesis = new Block(prevHash, MerkleTree.getMerkleTreeRoot(txList), txList, date.getTime(),0);
         return genesis;
     }
 

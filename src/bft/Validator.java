@@ -148,7 +148,8 @@ public class Validator {
         //Transaction coinBase = calculateCoinBase(toBeIncludedInBlock);
         //toBeIncludedInBlock.add(0, coinBase);
         String root = MerkleTree.getMerkleTreeRoot(toBeIncludedInBlock);
-        Block toBeAdded = new Block(Miner.blockchain.get(Miner.blockchain.size()-1).getHash(), root, toBeIncludedInBlock);
+        Block prev = Miner.getNewestBlock();
+        Block toBeAdded = new Block(prev.getHash(), root, toBeIncludedInBlock, prev.height+1);
         formedABlock(toBeAdded);
     }
 

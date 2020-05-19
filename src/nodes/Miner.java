@@ -18,7 +18,7 @@ import java.util.*;
 public class Miner {
     public static Broadcaster broadcaster;
     public volatile static LinkedHashMap<String, Transaction> pendingTxPool;
-    public volatile static List<Block> blockchain;
+    public volatile static List<List<Block>> blockchain;
     public volatile static ArrayList<ArrayList<Block>> staleBlocks;
     public volatile static HashSet<String> uTxoPool;
     public static int nodeNumber;
@@ -36,7 +36,9 @@ public class Miner {
     static {
         pendingTxPool = new LinkedHashMap<>();
         blockchain = new ArrayList<>();
-        blockchain.add(Block.getGenesisBlock());
+        List<Block> firstList = new ArrayList<>();
+        firstList.add(Block.getGenesisBlock());
+        blockchain.add(firstList);
         uTxoPool = new HashSet<>();
         currentWorkingThreads = new HashMap<>();
         staleBlocks = new ArrayList<>();
@@ -208,9 +210,11 @@ public class Miner {
     public static synchronized Transaction getTransaction(String previousTransactionHash) {
         // search previous blocks
         for (int i = 0 ;i<blockchain.size();i++) {
-            Block bl = blockchain.get(i);
-            if (bl.contains(previousTransactionHash))
-                return bl.get(previousTransactionHash);
+            for(int j=0;j<blockchain.get(i).size();j++) {
+                Block bl = blockchain.get(i).get(j);
+                if (bl.contains(previousTransactionHash))
+                    return bl.get(previousTransactionHash);
+            }
         }
 
         // search pending
@@ -222,29 +226,31 @@ public class Miner {
 
     public static synchronized void receivedNewBlock(Block block) {
         System.out.println("I RECEIVED A BLOCK!");
-        boolean valid = validateBlock(block);
-        if (valid && isMining()) {
-            invalidateAllMining();
+        int height = block.height;
+        boolean valid = validateBlock(block,height);
+
+        if (valid){
+            if(isMining()) {
+                invalidateAllMining();
+            }
             updatePendingPool(block);
-            blockchain.add(block);
-            System.out.println("BLOCK REC VALID: " + block);
+            for(int i=0;i<blockchain.size();i++){
+                if(blockchain.size()>=height
+                &&blockchain.get(i).get(height-1).getHash().equalsIgnoreCase(block.prevBlockHash)){
+                    if(blockchain.get(i).size()==height){
+                        blockchain.get(i).add(block);
+                        System.out.println("added received leaf Block "+block);
+                    }else{
+                        List<Block> l = blockchain.get(i).subList(0,height);
+                        l.add(block);
+                        blockchain.add(l);
+                        System.out.println("added received intermediate Block "+block);
+                    }
+                    break;
+                }
+            }
             if (pendingTxPool.size() > BLOCK_SIZE && !isMining()) {
                 startANewMiningThread();
-            }
-        }
-        else{
-            int height = blockchain.size()-2;
-            boolean valid_old = validateBlock(block, height);
-            if(valid_old){
-                System.out.println("BLOCK REC VALID OLD: " + block);
-                if(staleBlocks.size() <= height) {
-                    ArrayList<Block> newList = new ArrayList<>();
-                    newList.add(block);
-                    staleBlocks.add(height, newList);
-                }
-                else{
-                    staleBlocks.get(height).add(block);
-                }
             }
         }
     }
@@ -264,23 +270,37 @@ public class Miner {
     private static boolean validateBlock(Block block, int height) {
         boolean condition1 = MerkleTree.getMerkleTreeRoot(block.transactions).equalsIgnoreCase(block.merkleRootHash);
         boolean condition2 = ProofOfWork.validatePow(block, DIFF);
-        boolean condition3 = block.prevBlockHash.equalsIgnoreCase(blockchain.get(height).getHash());
+        boolean condition3 = false;
+        for(int i=0;i<blockchain.size();i++){
+            if(blockchain.get(i).size()>=height
+            && blockchain.get(i).get(height-1).getHash().equalsIgnoreCase(block.prevBlockHash)){
+                condition3=true;
+                break;
+            }
+        }
         //Should Check If there are multiple coinbase but since the txdataset has multiple coinbase transactions we didn't
         return condition1 && condition2 && condition3;
     }
 
-    private static boolean validateBlock(Block block) {
+    /*private static boolean validateBlock(Block block) {
         boolean condition1 = MerkleTree.getMerkleTreeRoot(block.transactions).equalsIgnoreCase(block.merkleRootHash);
         boolean condition2 = ProofOfWork.validatePow(block, DIFF);
         boolean condition3 = block.prevBlockHash.equalsIgnoreCase(blockchain.get(blockchain.size() - 1).getHash());
         //Should Check If there are multiple coinbase but since the txdataset has multiple coinbase transactions we didn't
         return condition1 && condition2 && condition3;
-    }
+    }*/
 
     public static void foundABlock(Block block, int hashCode) {
         if (currentWorkingThreads.get(hashCode)) {
             currentWorkingThreads.put(hashCode,false);
-            blockchain.add(block);
+            int height = block.height;
+            for(int i=0;i<blockchain.size();i++){
+                if(blockchain.get(i).size()>=height &&
+                        blockchain.get(i).get(height-1).getHash().equalsIgnoreCase(block.prevBlockHash)){
+                    blockchain.get(i).add(block);
+                    break;
+                }
+            }
             updatePendingPool(block);
             broadcaster.broadcast(block);
             System.out.println("BLOCK FOUND: " + block);
@@ -294,5 +314,16 @@ public class Miner {
         Thread miner = new MinerThread();
         currentWorkingThreads.put(miner.hashCode(), true);
         miner.start();
+    }
+
+    public static Block getNewestBlock() {
+        Block res = null;
+        for(int i=0;i<blockchain.size();i++){
+            int size = blockchain.get(i).size() ;
+            if(res==null || size>res.height+1){
+                res=blockchain.get(i).get(size-1);
+            }
+        }
+        return res;
     }
 }
