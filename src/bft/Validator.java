@@ -168,7 +168,7 @@ public class Validator {
                 validCount++;
         }
 
-        return validCount >= 1; // 2 * NUMBER_OF_VALIDATORS / 3;
+        return validCount >= 2; // 2 * NUMBER_OF_VALIDATORS / 3;
     }
 
     public static void receivedCommitMessage(Commit commit) {
@@ -213,7 +213,7 @@ public class Validator {
                 validCount++;
         }
 
-        return validCount >= 1; // 2 * NUMBER_OF_VALIDATORS / 3;
+        return validCount >= 2; // 2 * NUMBER_OF_VALIDATORS / 3;
     }
 
     public static void collectPendingTransactions() {
