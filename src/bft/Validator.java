@@ -11,6 +11,7 @@ import network.NodeInfo;
 import nodes.Miner;
 import org.web3j.crypto.Sign;
 import security_utils.MerkleTree;
+import sun.nio.ch.Net;
 import testing.DatasetParser;
 
 import java.io.DataInputStream;
@@ -22,11 +23,12 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.*;
+import java.util.concurrent.SynchronousQueue;
 
 public class Validator {
     private static boolean isProposer = false;
     private static final int NUMBER_OF_VALIDATORS = NetworkInfo.NODE_INFOS.length;
-    private static int currentProposer = -1;
+    private static int currentProposer = -1; // change to -1
     private static Utils.State state = Utils.State.FINAL_COMMITED;
     private static NodeInfo myInfo;
     public static HashMap<String, Transaction> pendingTxPool;
@@ -49,6 +51,8 @@ public class Validator {
 
     public static List<Prepare> prepareMessagesPool = new ArrayList<>();
     public static List<Commit> commitMessagesPool = new ArrayList<>();
+
+    public static Stack<PrePrepare> prePrepareStack = new Stack<>();
 
     static {
         pendingTxPool = new HashMap<>();
@@ -95,11 +99,30 @@ public class Validator {
             state = Utils.State.PRE_PREPARED;
         }
         // else wait for the pre-prepare message
-        else System.out.println("I am a validator");
+        else {
+            System.out.println("I am a validator");
+            if(!prePrepareStack.isEmpty()) {
+                // enter the pre-prepared state
+                state = Utils.State.PRE_PREPARED;
+
+                PrePrepare prePrepare = prePrepareStack.pop();
+
+                System.out.println("validating pre-prepare...");
+                // verify the proposal (the sender and the block itself)
+                if(validatePrePrepare(prePrepare)) {
+                    System.out.println("valid pre-prepare");
+                    currentWorkedOnBlock = prePrepare.block;
+                    Sign.SignatureData signature = account.signMessage(currentWorkedOnBlock.getHash(), false);
+                    bftBroadcaster.broadcast(new Prepare(currentWorkedOnBlock.getHash(), account.publicKey, signature));
+                }
+            }
+        }
 
     }
 
     public static void receivedPrePrepareMessage(PrePrepare prePrepare) {
+        prePrepareStack.add(prePrepare);
+
         if(state != Utils.State.FINAL_COMMITED) return;
 
         // enter the pre-prepared state
@@ -116,32 +139,60 @@ public class Validator {
     }
 
     public static void receivedPrepareMessage(Prepare prepare) {
+        prepareMessagesPool.add(prepare);
+
         if(state != Utils.State.PRE_PREPARED) return;
 
-        System.out.println("validating prepare...");
-        if(validatePrepare(prepare)) {
-            System.out.println("valid prepare");
-            prepareMessagesPool.add(prepare);
-            // wait for 2*(#nodes) / 3 valid prepare messages
-            if(prepareMessagesPool.size() >= 2 * NUMBER_OF_VALIDATORS / 3) {
-                System.out.println("Received enough prepare messages");
-                // then enter prepared state
-                state = Utils.State.PREPARED;
-                Sign.SignatureData signature = account.signMessage(currentWorkedOnBlock.getHash(), false);
-                bftBroadcaster.broadcast(new Commit(currentWorkedOnBlock.getHash(), account.publicKey, signature));
-            }
+        if(haveGotEnoughPrepareMessages()) {
+            System.out.println("Received enough prepare messages");
+            state = Utils.State.PREPARED;
+            Sign.SignatureData signature = account.signMessage(currentWorkedOnBlock.getHash(), false);
+            bftBroadcaster.broadcast(new Commit(currentWorkedOnBlock.getHash(), account.publicKey, signature));
         }
+
+        /*if(validatePrepare(prepare)) {
+            // wait for 2*(#nodes) / 3 valid prepare messages
+            //if(prepareMessagesPool.size() >= 2 * NUMBER_OF_VALIDATORS / 3) {
+            if(prepareMessagesPool.size() >= 2) {
+            //if(prepareMessagesPool.size() >= NUMBER_OF_VALIDATORS-1) {
+                // then enter prepared state
+
+            }
+        }*/
+    }
+
+    public static boolean haveGotEnoughPrepareMessages() {
+        int validCount = 0;
+        for(Prepare prepare : prepareMessagesPool) {
+            if(validatePrepare(prepare))
+                validCount++;
+        }
+
+        return validCount >= 1; // 2 * NUMBER_OF_VALIDATORS / 3;
     }
 
     public static void receivedCommitMessage(Commit commit) {
+        commitMessagesPool.add(commit);
+
         if(state != Utils.State.PREPARED) return;
 
-        System.out.println("validating commit...");
-        if(validateCommit(commit)) {
-            System.out.println("valid commit");
+        if(haveGotEnoughCommitMessages()) {
+            System.out.println("Received enough commit messages");
+            // then enter committed state
+            state = Utils.State.COMMITTED;
+            updatePendingPool(currentWorkedOnBlock);
+            blockchain.add(currentWorkedOnBlock);
+            state = Utils.State.FINAL_COMMITED;
+            System.out.println("Now we are to start a new round");
+            newRoundPhase();
+        }
+
+        /*if(validateCommit(commit)) {
             commitMessagesPool.add(commit);
             // wait for 2*(#nodes) / 3 valid commit messages
-            if(commitMessagesPool.size() >= 2 * NUMBER_OF_VALIDATORS / 3) {
+            //if(commitMessagesPool.size() >= 2 * NUMBER_OF_VALIDATORS / 3) {
+            if(commitMessagesPool.size() >= 2) {
+            //if(prepareMessagesPool.size() >= NUMBER_OF_VALIDATORS-1) {
                 System.out.println("Received enough commit messages");
                 // then enter committed state
                 state = Utils.State.COMMITTED;
@@ -152,7 +203,17 @@ public class Validator {
                 System.out.println("Now we are to start a new round");
                 newRoundPhase();
             }
+        }*/
+    }
+
+    public static boolean haveGotEnoughCommitMessages() {
+        int validCount = 0;
+        for(Commit commit : commitMessagesPool) {
+            if(validateCommit(commit))
+                validCount++;
         }
+
+        return validCount >= 1; // 2 * NUMBER_OF_VALIDATORS / 3;
     }
 
     public static void collectPendingTransactions() {
@@ -178,6 +239,8 @@ public class Validator {
             System.out.println("size: " + bftBroadcaster.connectedPeers);
             if(bftBroadcaster.connectedPeers >= NetworkInfo.NODE_INFOS.length-1)
                 break;
+            //if(nodeNumber == NetworkInfo.NODE_INFOS.length-1)
+            //    break;
 
             Socket socket = null;
 
@@ -195,7 +258,7 @@ public class Validator {
 
                 System.out.println("Assigning new thread for this peer");
 
-                Thread t = new Listener(socket, dis, dos);
+                Thread t = new BFTListener(socket, dis, dos);
                 t.start();
 
             }
@@ -362,12 +425,14 @@ public class Validator {
     }
 
     public static boolean validatePrepare(Prepare prepare) {
+        if(currentWorkedOnBlock == null) return false;
         boolean isValidBlockHash = prepare.blockHash.equalsIgnoreCase(currentWorkedOnBlock.getHash());
         boolean isValidSignature = Account.validateSignature(prepare.blockHash, prepare.publicKey, prepare.signature, false);
         return isValidBlockHash && isValidSignature;
     }
 
     public static boolean validateCommit(Commit commit) {
+        if(currentWorkedOnBlock == null) return false;
         boolean isValidBlockHash = commit.blockHash.equalsIgnoreCase(currentWorkedOnBlock.getHash());
         boolean isValidSignature = Account.validateSignature(commit.blockHash, commit.publicKey, commit.signature, false);
         return isValidBlockHash && isValidSignature;
@@ -375,6 +440,7 @@ public class Validator {
 
     public static void formedABlock(Block block) {
         Sign.SignatureData signature = account.signMessage(block.toString(), false);
+        currentWorkedOnBlock = block;
         bftBroadcaster.broadcast(new PrePrepare(block, account.publicKey, signature));
         //updatePendingPool(block);
         //blockchain.add(block);
@@ -406,8 +472,14 @@ public class Validator {
                 receivedNewTransaction(txList.get(key));
             }
 
-            //while(true)
-                newRoundPhase();
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            System.out.println("Entering new round phase!!!!!");
+            newRoundPhase();
+            while(true);
         } catch (InvalidAlgorithmParameterException e) {
             e.printStackTrace();
         } catch (NoSuchAlgorithmException e) {

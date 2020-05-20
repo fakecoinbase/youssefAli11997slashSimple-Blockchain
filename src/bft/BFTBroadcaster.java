@@ -64,7 +64,7 @@ public class BFTBroadcaster {
                 objectOutputStreams.add(new ObjectOutputStream(out));
             }
             catch(IOException u) {
-                u.printStackTrace();
+                //u.printStackTrace();
             }
         }
     }
