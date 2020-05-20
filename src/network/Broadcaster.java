@@ -35,7 +35,6 @@ public class Broadcaster {
                 String remoteIp = s.replace("/","").substring(0, s.indexOf(":")-1);
                 if(nodeInfo.ipAddress.equals(remoteIp) && nodeInfo.port == socket.getPort()){
                     shouldContinue = true;
-                    System.out.println("Here");
                 }
             }
 
