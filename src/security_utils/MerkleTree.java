@@ -7,6 +7,7 @@ import java.util.List;
 
 public class MerkleTree {
     public static String getMerkleTreeRoot(List<Transaction> transactionList){
+        System.out.println("txs size: " + transactionList.size());
         ArrayList<String> listOfHashes = new ArrayList<>();
         for(Transaction tx: transactionList)
             listOfHashes.add(tx.getHash());

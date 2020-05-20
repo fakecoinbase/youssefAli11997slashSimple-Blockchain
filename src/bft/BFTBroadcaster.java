@@ -15,9 +15,11 @@ import java.net.Socket;
 import java.util.*;
 
 public class BFTBroadcaster {
-    private static Set<Socket> sockets = new HashSet<>();
+    public Set<Socket> sockets = new HashSet<>();
     private Scanner input = new Scanner(System.in);
     private static List<DataOutputStream> outputStreams = new ArrayList<>();
+    private static List<ObjectOutputStream> objectOutputStreams = new ArrayList<>();
+    public int connectedPeers = 0;
 
     private NodeInfo myInfo;
 
@@ -26,7 +28,9 @@ public class BFTBroadcaster {
     }
 
     public void connectWithPeers() {
+        System.out.println("Here");
         for(NodeInfo nodeInfo : NetworkInfo.NODE_INFOS) {
+            System.out.println("Itr!");
 
             // skip my own node
             if(myInfo.ipAddress.equals(nodeInfo.ipAddress) && myInfo.port == nodeInfo.port)
@@ -42,29 +46,27 @@ public class BFTBroadcaster {
                 }
             }
 
+            System.out.println("\t should continue: " + shouldContinue);
+
             if(shouldContinue) continue;
 
             // establish a connection
             try {
+                System.out.println("Establishing a connection");
                 Socket socket = new Socket(nodeInfo.ipAddress, nodeInfo.port);
                 System.out.println("Connected");
+                //connectedPeers++;
 
                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 
                 sockets.add(socket);
                 outputStreams.add(out);
+                objectOutputStreams.add(new ObjectOutputStream(out));
             }
             catch(IOException u) {
                 u.printStackTrace();
             }
         }
-    }
-
-    public static void addNewSocket(Socket socket) {
-        sockets.add(socket);
-    }
-    public static void addNewOutputStream(DataOutputStream dos) {
-        outputStreams.add(dos);
     }
 
     public void broadcast(String msg) {
@@ -78,10 +80,17 @@ public class BFTBroadcaster {
     }
 
     public void broadcast(Transaction transaction) {
-        for(DataOutputStream outputStream : outputStreams) {
+        /*for(DataOutputStream outputStream : outputStreams) {
             try {
                 ObjectOutputStream os = new ObjectOutputStream(outputStream);
                 os.writeObject(transaction);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }*/
+        for(ObjectOutputStream outputStream : objectOutputStreams) {
+            try {
+                outputStream.writeObject(transaction);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -89,10 +98,9 @@ public class BFTBroadcaster {
     }
 
     public void broadcast(Block block) {
-        for(DataOutputStream outputStream : outputStreams) {
+        for(ObjectOutputStream outputStream : objectOutputStreams) {
             try {
-                ObjectOutputStream os = new ObjectOutputStream(outputStream);
-                os.writeObject(block);
+                outputStream.writeObject(block);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -100,10 +108,9 @@ public class BFTBroadcaster {
     }
 
     public void broadcast(PrePrepare prePrepare) {
-        for(DataOutputStream outputStream : outputStreams) {
+        for(ObjectOutputStream outputStream : objectOutputStreams) {
             try {
-                ObjectOutputStream os = new ObjectOutputStream(outputStream);
-                os.writeObject(prePrepare);
+                outputStream.writeObject(prePrepare);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -111,10 +118,9 @@ public class BFTBroadcaster {
     }
 
     public void broadcast(Prepare prepare) {
-        for(DataOutputStream outputStream : outputStreams) {
+        for(ObjectOutputStream outputStream : objectOutputStreams) {
             try {
-                ObjectOutputStream os = new ObjectOutputStream(outputStream);
-                os.writeObject(prepare);
+                outputStream.writeObject(prepare);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -122,10 +128,9 @@ public class BFTBroadcaster {
     }
 
     public void broadcast(Commit commit) {
-        for(DataOutputStream outputStream : outputStreams) {
+        for(ObjectOutputStream outputStream : objectOutputStreams) {
             try {
-                ObjectOutputStream os = new ObjectOutputStream(outputStream);
-                os.writeObject(commit);
+                outputStream.writeObject(commit);
             } catch (IOException e) {
                 e.printStackTrace();
             }
