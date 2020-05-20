@@ -25,7 +25,7 @@ public class Miner {
     public static int nodeNumber;
     public static final int BLOCK_SIZE = 20;
     public static final int BLOCK_REWARD = 5;
-    public static final int DIFF = 2;
+    public static final int DIFF = 20;
     public static int WORKING_MODE = 0; //0 For POW | 1 For BFT
     public static Account account;
     public static Hashtable<Integer, Boolean> currentWorkingThreads;
